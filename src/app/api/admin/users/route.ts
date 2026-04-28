@@ -1,0 +1,46 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+
+// GET users con rol student
+export async function GET() {
+  try {
+    const result = await db.execute(
+      "SELECT * FROM users WHERE role = 'student' ORDER BY created_at DESC"
+    );
+
+    const users = result.rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      email: row.email,
+      image: row.image,
+      role: row.role,
+      created_at: row.created_at,
+    }));
+
+    return NextResponse.json(users);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json(
+      { error: "Error al obtener usuarios" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST create user
+export async function POST(req: NextRequest) {
+  try {
+    const { id, name, email, image, role } = await req.json();
+    if (!id || !email) {
+      return NextResponse.json({ error: "id y email son requeridos" }, { status: 400 });
+    }
+    await db.execute({
+      sql: "INSERT INTO users (id, name, email, image, role) VALUES (?, ?, ?, ?, ?)",
+      args: [id, name ?? null, email, image ?? null, role ?? "student"],
+    });
+    return NextResponse.json({ success: true }, { status: 201 });
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Error al crear usuario" }, { status: 500 });
+  }
+}

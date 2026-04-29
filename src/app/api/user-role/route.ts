@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, initDb } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
+    await initDb();
     const { searchParams } = new URL(request.url);
     const email = searchParams.get("email");
 

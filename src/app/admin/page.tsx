@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, Shield, GraduationCap, RefreshCw, Clock, CheckCircle2, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck } from "lucide-react";
 import { LogoutButton } from "../components/LogoutButton";
 
 type User = {
@@ -39,6 +39,14 @@ export default function AdminDashboard() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const updateViewport = () => setIsMobile(window.innerWidth < 1024);
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   // Auth check
   useEffect(() => {
@@ -176,18 +184,31 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", background: "var(--background)" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: isMobile ? "column" : "row", background: "var(--background)" }}>
       {/* Sidebar */}
       <aside style={{
-        width: 240, display: "flex", flexDirection: "column", gap: 32, padding: "2rem 1.25rem",
-        background: "rgba(255,255,255,0.02)", borderRight: "1px solid rgba(255,255,255,0.08)",
+        width: isMobile ? "100%" : 240,
+        display: "flex",
+        flexDirection: "column",
+        gap: isMobile ? 16 : 32,
+        padding: isMobile ? "1rem" : "2rem 1.25rem",
+        background: "rgba(255,255,255,0.02)",
+        borderRight: isMobile ? "none" : "1px solid rgba(255,255,255,0.08)",
+        borderBottom: isMobile ? "1px solid rgba(255,255,255,0.08)" : "none",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 4px" }}>
           <LayoutDashboard size={22} color="var(--primary)" />
           <span style={{ fontWeight: 700, fontSize: 17 }}>Panel Admin</span>
         </div>
 
-        <nav style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+        <nav style={{
+          display: "flex",
+          flexDirection: isMobile ? "row" : "column",
+          gap: 6,
+          flex: 1,
+          overflowX: isMobile ? "auto" : "visible",
+          paddingBottom: isMobile ? 2 : 0,
+        }}>
           {[
             { id: "dashboard", label: "Dashboard", Icon: BookOpenCheck },
             { id: "users", label: "Estudiantes", Icon: Users },
@@ -203,6 +224,8 @@ export default function AdminDashboard() {
                 color: activeSection === id ? (id === "pendientes" ? "#f59e0b" : "var(--primary)") : "#94a3b8",
                 transition: "all 0.2s",
                 position: "relative",
+                whiteSpace: "nowrap",
+                flexShrink: 0,
               }}
             >
               <Icon size={18} />{label}
@@ -217,11 +240,13 @@ export default function AdminDashboard() {
           ))}
         </nav>
 
-        <LogoutButton />
+        <div style={{ alignSelf: isMobile ? "flex-end" : "stretch" }}>
+          <LogoutButton />
+        </div>
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, padding: "2.5rem 3rem", overflowY: "auto" }}>
+      <main style={{ flex: 1, padding: isMobile ? "1rem" : "2.5rem 3rem", overflowY: "auto" }}>
         <header style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff,#94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
             {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : "Gestión de Estudiantes"}
@@ -234,7 +259,7 @@ export default function AdminDashboard() {
         {activeSection === "dashboard" && (
           <>
             {/* Stats row */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 28 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 16, marginBottom: 28 }}>
               {stats.map(({ label, value, icon: Icon }, i) => (
                 <div key={label} style={{
                   background: "rgba(255,255,255,0.03)", border: `1px solid ${i === 1 ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.08)"}`,
@@ -251,7 +276,7 @@ export default function AdminDashboard() {
               ))}
             </div>
             {pending.length > 0 && (
-              <div style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <Clock size={18} color="#f59e0b" />
                   <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>{pending.length} estudiante{pending.length > 1 ? "s" : ""} esperando activación</span>
@@ -283,7 +308,7 @@ export default function AdminDashboard() {
                   <div key={u.id} style={{
                     background: "rgba(255,255,255,0.02)", border: "1px solid rgba(245,158,11,0.15)",
                     borderRadius: 14, padding: "1.25rem 1.5rem",
-                    display: "flex", alignItems: "center", gap: 16,
+                    display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
                   }}>
                     {u.image ? (
                       <img src={String(u.image)} alt={String(u.name ?? "")} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(245,158,11,0.3)", flexShrink: 0 }} />
@@ -299,7 +324,7 @@ export default function AdminDashboard() {
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "3px 10px", color: "#f59e0b", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
                       <Clock size={12} /> Pendiente
                     </div>
-                    <div style={{ fontSize: 12, color: "#475569", whiteSpace: "nowrap" }}>
+                    <div style={{ fontSize: 12, color: "#475569", whiteSpace: "nowrap", marginLeft: isMobile ? "auto" : 0 }}>
                       {u.created_at ? new Date(u.created_at).toLocaleDateString("es-BO") : "—"}
                     </div>
                     <button
@@ -331,7 +356,7 @@ export default function AdminDashboard() {
           <>
 
             {/* Toolbar */}
-            <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
+            <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center", flexWrap: "wrap" }}>
               <div style={{ position: "relative", flex: 1 }}>
                 <Search size={15} color="#64748b" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)" }} />
                 <input
@@ -358,7 +383,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Table */}
-            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, overflow: "hidden" }}>
+            <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, overflow: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>

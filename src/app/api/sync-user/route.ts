@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, initDb } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
+    await initDb();
     const { id, name, email, image, phone } = await request.json();
 
     if (!id || !email) {

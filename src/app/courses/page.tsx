@@ -4,14 +4,36 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Book, GraduationCap, Clock, Shield, Clock3 } from "lucide-react";
+import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2 } from "lucide-react";
 import { LogoutButton } from "../components/LogoutButton";
+
+type StudentUser = {
+  id: string;
+  name: string;
+};
+
+type Topic = {
+  id: number;
+  topicOrder: number;
+  title: string;
+  description: string;
+  videoUrl: string;
+  unlocked: boolean;
+  locked: boolean;
+  isCurrent: boolean;
+  score: number;
+  attempts: number;
+  passed: boolean;
+  completedAt: string | null;
+};
 
 export default function CoursesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setUser] = useState<StudentUser | null>(null);
   const [status, setStatus] = useState<string>("activo");
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -23,14 +45,31 @@ export default function CoursesPage() {
             if (data.role === "admin") {
               router.push("/admin");
             } else {
-              setUser({ name: data.name || firebaseUser.displayName || "Estudiante" });
-              setStatus(data.status ?? "activo");
+              const nextStatus = data.status ?? "activo";
+              setUser({ id: firebaseUser.uid, name: data.name || firebaseUser.displayName || "Estudiante" });
+              setStatus(nextStatus);
+
+              if (nextStatus === "activo") {
+                const topicsRes = await fetch(
+                  `/api/course-topics?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(nextStatus)}`
+                );
+
+                if (topicsRes.ok) {
+                  const topicsData = await topicsRes.json();
+                  setTopics(topicsData.topics ?? []);
+                  setCurrentTopic(topicsData.currentTopic ?? null);
+                }
+              } else {
+                setTopics([]);
+                setCurrentTopic(null);
+              }
+
               setLoading(false);
             }
           } else {
             router.push("/");
           }
-        } catch (e) {
+        } catch {
           router.push("/");
         }
       } else {
@@ -130,11 +169,9 @@ export default function CoursesPage() {
     );
   }
 
-  const courses = [
-    { id: 1, title: "Introducción a la Justicia Indígena", duration: "10h", level: "Básico" },
-    { id: 2, title: "Pluralismo Jurídico en Bolivia", duration: "15h", level: "Intermedio" },
-    { id: 3, title: "Derechos de los Pueblos Indígenas", duration: "12h", level: "Avanzado" },
-  ];
+  const handleContinue = (topicOrder: number) => {
+    router.push(`/courses/${topicOrder}`);
+  };
 
   return (
     <div className="min-h-screen">
@@ -161,38 +198,94 @@ export default function CoursesPage() {
           <p className="text-slate-400 mt-2">Continúa tu aprendizaje sobre los sistemas de justicia comunitaria.</p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.map((course) => (
-            <div key={course.id} className="glass-card flex flex-col gap-6 group hover:border-primary/40 transition-all">
-              <div className="aspect-video rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden relative">
-                <Book className="w-12 h-12 text-slate-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-              
-              <div>
-                <div className="flex items-center gap-2 text-primary text-xs font-bold uppercase tracking-wider mb-2">
-                  <span className="px-2 py-0.5 rounded bg-primary/10">{course.level}</span>
+        {status === "activo" && topics.length === 0 ? (
+          <div className="glass-card max-w-2xl">
+            <h2 className="text-2xl font-bold mb-3">Aun no hay temas cargados</h2>
+            <p className="text-slate-400">
+              Tu cuenta ya fue activada, pero todavia no hay contenido disponible en la tabla `topics`.
+            </p>
+          </div>
+        ) : (
+          <>
+            {currentTopic && (
+              <div className="glass-card mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-primary text-sm font-semibold uppercase tracking-wider mb-2">Tema disponible ahora</p>
+                  <h2 className="text-2xl font-bold">
+                    Tema {currentTopic.topicOrder}: {currentTopic.title}
+                  </h2>
+                  <p className="text-slate-400 mt-2 max-w-2xl">
+                    {currentTopic.description || "Ingresa al tema para ver el video, la explicacion y las preguntas relacionadas."}
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold mb-4">{course.title}</h3>
-                
-                <div className="flex items-center gap-4 text-sm text-slate-400">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {course.duration}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Book className="w-4 h-4" />
-                    12 Módulos
-                  </div>
-                </div>
-              </div>
 
-              <button className="btn btn-primary w-full mt-auto">
-                Continuar Curso
-              </button>
+                <button
+                  onClick={() => handleContinue(currentTopic.topicOrder)}
+                  className="btn btn-primary flex items-center gap-2"
+                >
+                  <PlayCircle className="w-4 h-4" />
+                  Continuar con el curso
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {topics.map((topic) => (
+                <div
+                  key={topic.id}
+                  className={`glass-card flex flex-col gap-6 transition-all ${
+                    topic.unlocked ? "group hover:border-primary/40" : "opacity-80 border-white/5"
+                  }`}
+                >
+                  <div className="aspect-video rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden relative">
+                    {topic.locked ? (
+                      <Lock className="w-12 h-12 text-slate-500" />
+                    ) : topic.passed ? (
+                      <CheckCircle2 className="w-12 h-12 text-green-400" />
+                    ) : (
+                      <Book className="w-12 h-12 text-slate-700" />
+                    )}
+                    <div className="absolute top-3 left-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
+                      Tema {topic.topicOrder}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
+                      <span className={`px-2 py-0.5 rounded ${topic.unlocked ? "bg-primary/10 text-primary" : "bg-slate-700/50 text-slate-300"}`}>
+                        {topic.unlocked ? (topic.passed ? "Completado" : "Disponible") : "Bloqueado"}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold mb-4">{topic.title}</h3>
+
+                    <div className="flex flex-col gap-2 text-sm text-slate-400">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        Intentos: {topic.attempts}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Book className="w-4 h-4" />
+                        Puntaje: {topic.score}
+                      </div>
+                    </div>
+
+                    {topic.description && (
+                      <p className="mt-4 text-sm text-slate-400 line-clamp-3">{topic.description}</p>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() => handleContinue(topic.topicOrder)}
+                    disabled={!topic.unlocked}
+                    className={`w-full mt-auto ${topic.unlocked ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
+                  >
+                    {topic.unlocked ? "Continuar con el curso" : "Tema bloqueado"}
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </main>
     </div>
   );

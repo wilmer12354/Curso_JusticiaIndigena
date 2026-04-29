@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { db, initDb } from "@/lib/db";
 
 // GET all students (with status)
 export async function GET() {
   try {
+    await initDb();
     const result = await db.execute(
       "SELECT * FROM users WHERE role = 'student' ORDER BY created_at DESC"
     );
@@ -31,6 +32,7 @@ export async function GET() {
 // POST create user
 export async function POST(req: NextRequest) {
   try {
+    await initDb();
     const { id, name, email, image, role, status } = await req.json();
     if (!id || !email) {
       return NextResponse.json({ error: "id y email son requeridos" }, { status: 400 });

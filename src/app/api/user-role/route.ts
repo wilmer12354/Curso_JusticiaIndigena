@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     }
 
     const result = await db.execute({
-      sql: "SELECT name, role FROM users WHERE email = ?",
+      sql: "SELECT name, role, status FROM users WHERE email = ?",
       args: [email],
     });
 
@@ -21,7 +21,8 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ 
       name: result.rows[0].name,
-      role: result.rows[0].role 
+      role: result.rows[0].role,
+      status: result.rows[0].status ?? "activo",
     });
   } catch (error) {
     console.error("Fetch User Role Error:", error);

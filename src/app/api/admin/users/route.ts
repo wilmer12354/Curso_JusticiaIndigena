@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
-// GET users con rol student
+// GET all students (with status)
 export async function GET() {
   try {
     const result = await db.execute(
@@ -14,6 +14,7 @@ export async function GET() {
       email: row.email,
       image: row.image,
       role: row.role,
+      status: row.status ?? "activo",
       created_at: row.created_at,
     }));
 
@@ -30,13 +31,13 @@ export async function GET() {
 // POST create user
 export async function POST(req: NextRequest) {
   try {
-    const { id, name, email, image, role } = await req.json();
+    const { id, name, email, image, role, status } = await req.json();
     if (!id || !email) {
       return NextResponse.json({ error: "id y email son requeridos" }, { status: 400 });
     }
     await db.execute({
-      sql: "INSERT INTO users (id, name, email, image, role) VALUES (?, ?, ?, ?, ?)",
-      args: [id, name ?? null, email, image ?? null, role ?? "student"],
+      sql: "INSERT INTO users (id, name, email, image, role, status) VALUES (?, ?, ?, ?, ?, ?)",
+      args: [id, name ?? null, email, image ?? null, role ?? "student", status ?? "pendiente"],
     });
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (e) {
@@ -44,3 +45,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Error al crear usuario" }, { status: 500 });
   }
 }
+

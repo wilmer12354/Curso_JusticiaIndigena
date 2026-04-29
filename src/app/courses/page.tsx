@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Book, GraduationCap, Clock } from "lucide-react";
+import { Book, GraduationCap, Clock, Shield, Clock3 } from "lucide-react";
 import { LogoutButton } from "../components/LogoutButton";
 
 export default function CoursesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<{ name: string } | null>(null);
+  const [status, setStatus] = useState<string>("activo");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -23,6 +24,7 @@ export default function CoursesPage() {
               router.push("/admin");
             } else {
               setUser({ name: data.name || firebaseUser.displayName || "Estudiante" });
+              setStatus(data.status ?? "activo");
               setLoading(false);
             }
           } else {
@@ -43,6 +45,87 @@ export default function CoursesPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // PENDING STATUS: show waiting screen
+  if (status === "pendiente") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{
+        background: "radial-gradient(circle at 30% 20%, rgba(194,65,12,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(245,158,11,0.05) 0%, transparent 50%)"
+      }}>
+        <div style={{
+          background: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 28,
+          padding: "3rem 2.5rem",
+          maxWidth: 480,
+          width: "100%",
+          textAlign: "center",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "1.5rem",
+        }}>
+          {/* Animated clock icon */}
+          <div style={{
+            width: 80, height: 80, borderRadius: "50%",
+            background: "rgba(245,158,11,0.12)",
+            border: "2px solid rgba(245,158,11,0.25)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <Clock3 size={36} color="#f59e0b" />
+          </div>
+
+          <div>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)",
+              borderRadius: 999, padding: "4px 14px", marginBottom: "1rem",
+              color: "#f59e0b", fontSize: 12, fontWeight: 700, letterSpacing: "0.05em",
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b", display: "inline-block", animation: "ping 1.5s ease-in-out infinite" }} />
+              VERIFICACIÓN PENDIENTE
+            </div>
+            <h1 style={{
+              fontSize: "1.8rem", fontWeight: 800, marginBottom: "0.75rem",
+              background: "linear-gradient(135deg,#fff,#94a3b8)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>
+              Espere por favor
+            </h1>
+            <p style={{ color: "#94a3b8", fontSize: "1rem", lineHeight: 1.7, maxWidth: 380, margin: "0 auto" }}>
+              El administrador está verificando tu pago. Una vez confirmado, tu cuenta será activada y podrás acceder a todos los cursos.
+            </p>
+          </div>
+
+          <div style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 14, padding: "1rem 1.5rem",
+            width: "100%", textAlign: "left",
+          }}>
+            <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Tu cuenta</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Shield size={16} color="#f59e0b" />
+              <span style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 500 }}>{user.name}</span>
+            </div>
+          </div>
+
+          <LogoutButton />
+
+          <p style={{ fontSize: 12, color: "#475569" }}>
+            ¿Tienes dudas? Contacta al administrador.
+          </p>
+        </div>
+
+        <style>{`
+          @keyframes ping {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.5); }
+          }
+        `}</style>
       </div>
     );
   }
@@ -114,3 +197,4 @@ export default function CoursesPage() {
     </div>
   );
 }
+

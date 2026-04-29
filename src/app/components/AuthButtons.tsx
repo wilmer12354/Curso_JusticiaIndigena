@@ -9,7 +9,6 @@ import Swal from "sweetalert2";
 
 export function AuthButtons() {
   const router = useRouter();
-  const [loadingSignUp, setLoadingSignUp] = useState(false);
   const [loadingSignIn, setLoadingSignIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,40 +19,9 @@ export function AuthButtons() {
     return data.role;
   };
 
-  // CREAR CUENTA: Abre Google, guarda en Turso si es nuevo, redirige
-  const handleSignUp = async () => {
-    try {
-      setError(null);
-      setLoadingSignUp(true);
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-
-      // Guardar en Turso (si ya existe, no hace nada)
-      await fetch("/api/sync-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: user.uid,
-          name: user.displayName,
-          email: user.email,
-          image: user.photoURL,
-        }),
-      });
-
-      // Obtener rol y redirigir
-      const role = await redirectByRole(user.email!);
-      if (role === "admin") {
-        router.push("/admin");
-      } else {
-        router.push("/courses");
-      }
-    } catch (err: any) {
-      if (err.code !== "auth/popup-closed-by-user") {
-        setError("Ocurrió un error al crear la cuenta. Inténtalo de nuevo.");
-      }
-    } finally {
-      setLoadingSignUp(false);
-    }
+  // CREAR CUENTA: redirige a la página de registro
+  const handleSignUp = () => {
+    router.push("/register");
   };
 
   // INICIAR SESIÓN: Abre Google, verifica si existe en Turso ANTES de dejar pasar
@@ -111,22 +79,22 @@ export function AuthButtons() {
       )}
 
       <div className="glass-card flex flex-col sm:flex-row gap-4">
-        {/* CREAR CUENTA */}
+        {/* INSCRIBIRSE */}
         <button
           id="btn-signup"
           onClick={handleSignUp}
-          disabled={loadingSignUp || loadingSignIn}
+          disabled={loadingSignIn}
           className="btn btn-primary w-full sm:w-auto"
         >
           <UserPlus className="w-5 h-5" />
-          {loadingSignUp ? "Creando cuenta..." : "Crear Cuenta (Google)"}
+          Inscribirse
         </button>
 
         {/* INICIAR SESIÓN */}
         <button
           id="btn-signin"
           onClick={handleSignIn}
-          disabled={loadingSignUp || loadingSignIn}
+          disabled={loadingSignIn}
           className="btn btn-secondary w-full sm:w-auto"
         >
           <LogIn className="w-5 h-5" />

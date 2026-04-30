@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
 
@@ -203,11 +203,9 @@ export default function TopicDetailPage() {
         completedAt: data.passed ? new Date().toISOString() : prev?.completedAt ?? null,
       }));
 
-      if (data.passed) {
-        setTimeout(() => {
-          router.push("/courses");
-        }, 1800);
-      }
+      // if (data.passed) {
+      //   Modal handle the redirect now
+      // }
     } catch {
       setSubmitError("Error de red al enviar el examen.");
     } finally {
@@ -451,26 +449,6 @@ export default function TopicDetailPage() {
                       </div>
                     )}
 
-                    {examResult && (
-                      <div
-                        className={`rounded-xl p-4 text-sm ${
-                          examResult.passed
-                            ? "border border-green-500/30 bg-green-500/10 text-green-300"
-                            : "border border-amber-500/30 bg-amber-500/10 text-amber-300"
-                        }`}
-                      >
-                        <p className="font-semibold mb-1">Tu nota: {examResult.score}/100</p>
-                        <p className="mb-1">
-                          Respuestas correctas: {examResult.correctAnswers} de {examResult.totalQuestions}
-                        </p>
-                        <p>
-                          {examResult.passed
-                            ? "Aprobaste el tema. En breve te redirigimos para ver el siguiente tema desbloqueado."
-                            : "No aprobaste aun. Puedes intentarlo nuevamente."}
-                        </p>
-                      </div>
-                    )}
-
                     <button
                       onClick={handleSubmitExam}
                       disabled={submitting || !isExamComplete}
@@ -484,16 +462,6 @@ export default function TopicDetailPage() {
                         Responde todas las preguntas para habilitar el envio.
                       </p>
                     )}
-
-                    {examResult && !examResult.passed && (
-                      <button
-                        type="button"
-                        onClick={() => startExam(examQuestions.map((question) => question.id))}
-                        className="btn w-full"
-                      >
-                        Reintentar con otras 3 preguntas
-                      </button>
-                    )}
                   </>
                 )}
               </div>
@@ -501,6 +469,57 @@ export default function TopicDetailPage() {
           </aside>
         </section>
       </main>
+
+      {/* Modal de Resultados */}
+      {examResult && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-xl">
+            <div className="text-center">
+              {examResult.passed ? (
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 text-green-400">
+                  <CircleCheck className="h-8 w-8" />
+                </div>
+              ) : (
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20 text-red-400">
+                  <XCircle className="h-8 w-8" />
+                </div>
+              )}
+              
+              <h3 className="mb-2 text-2xl font-bold text-white">
+                {examResult.passed ? "¡Aprobaste el tema!" : "No aprobaste aún"}
+              </h3>
+              
+              <div className="mb-6 space-y-2 text-slate-300">
+                <p className="text-lg">Tu nota: <strong className="text-white">{examResult.score}/100</strong></p>
+                <p>Respuestas correctas: {examResult.correctAnswers} de {examResult.totalQuestions}</p>
+                {examResult.passed ? (
+                  <p className="text-sm text-green-400 mt-2">¡Felicidades! Has desbloqueado el siguiente contenido.</p>
+                ) : (
+                  <p className="text-sm text-red-400 mt-2">Puedes intentarlo nuevamente con otras preguntas.</p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                {examResult.passed ? (
+                  <button
+                    onClick={() => router.push("/courses")}
+                    className="btn w-full bg-green-600 hover:bg-green-500 text-white border-none py-3"
+                  >
+                    Vamos al siguiente tema
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => startExam(examQuestions.map((q) => q.id))}
+                    className="btn w-full bg-primary hover:bg-primary/90 text-white border-none py-3"
+                  >
+                    Reintentar
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

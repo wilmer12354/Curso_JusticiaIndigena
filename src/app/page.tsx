@@ -61,7 +61,7 @@ export default function LandingPage() {
       <header className="mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="flex items-center justify-center gap-3 mb-6">
           <Shield className="w-10 h-10 text-primary" />
-          <span className="text-xl font-bold tracking-tight text-slate-400">CEPABOL JUSTICE</span>
+          <span className="text-xl font-bold tracking-tight text-slate-400">CEPABOL</span>
         </div>
         <h1 className="max-w-4xl mx-auto">
           Justicia Indígena Originaria Campesina

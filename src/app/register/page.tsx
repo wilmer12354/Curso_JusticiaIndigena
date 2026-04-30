@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [hasPaid, setHasPaid] = useState(false);
 
   const validate = () => {
     let valid = true;
@@ -99,7 +100,7 @@ export default function RegisterPage() {
           </Link>
           <div className="register-logo">
             <Shield className="w-8 h-8 text-primary" />
-            <span className="register-logo-text">CEPABOL JUSTICE</span>
+            <span className="register-logo-text">CEPABOL</span>
           </div>
         </div>
 
@@ -227,11 +228,30 @@ export default function RegisterPage() {
               Asegúrate de haber realizado el pago antes de continuar.
             </p>
 
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 bg-gray-50 dark:bg-slate-800 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">¿Ya realizó el pago?</span>
+              <button
+                type="button"
+                onClick={() => setHasPaid(true)}
+                className={`px-4 py-2 rounded-md text-sm font-bold transition-colors ${hasPaid ? "bg-green-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+              >
+                {hasPaid ? "✓ Pago confirmado" : "Sí, ya pagué"}
+              </button>
+            </div>
+
+            {hasPaid && (
+              <div className="mb-6 p-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm font-medium border border-green-200 dark:border-green-800">
+                Si es así, mande el comprobante al <strong className="text-green-900 dark:text-green-100 font-bold">71539769</strong> e ingrese a continuación con su correo de Google.
+              </div>
+            )}
+
             <button
               id="btn-google-signup"
               onClick={handleGoogleSignUp}
-              disabled={step === "loading"}
+              disabled={step === "loading" || !hasPaid}
               className="register-google-btn"
+              style={!hasPaid ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
             >
               {step === "loading" ? (
                 <>

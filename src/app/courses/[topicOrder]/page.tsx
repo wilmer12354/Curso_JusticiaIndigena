@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
 
@@ -288,9 +288,14 @@ export default function TopicDetailPage() {
           </div>
 
           <h1 className="text-4xl font-bold mb-4">{topic.title}</h1>
-          <p className="text-slate-400 max-w-3xl">
+          <p className="text-slate-400 max-w-3xl mb-5">
             {topic.description || "En esta pagina solo se muestra el contenido correspondiente al tema seleccionado."}
           </p>
+
+          <Link href={`/courses/${topic.topicOrder}/docs`} className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20">
+            <FileText className="w-4 h-4" />
+            Ver Documentación
+          </Link>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">

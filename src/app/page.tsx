@@ -60,11 +60,15 @@ export default function LandingPage() {
 
       <header className="mb-12 animate-fade-in" style={{ animationDelay: '0.2s' }}>
         <div className="flex items-center justify-center gap-3 mb-6">
-          <Shield className="w-10 h-10 text-primary" />
+          <img
+            src="/logo-cepabol.png"
+            alt="Logo CEPABOL"
+            className="w-12 h-12 object-contain rounded-full bg-white/10 p-1 backdrop-blur-sm"
+          />
           <span className="text-xl font-bold tracking-tight text-slate-400">CEPABOL</span>
         </div>
-        <h1 className="max-w-4xl mx-auto">
-          Justicia Indígena Originaria Campesina
+        <h1 className="max-w-4xl mx-auto leading-[1.2] pb-2">
+          Curso: Justicia Indígena Originaria Campesina
         </h1>
         <p className="mx-auto text-slate-400">
           Explora y fortalece los conocimientos sobre la pluralidad jurídica y los sistemas de justicia comunitaria en Bolivia.

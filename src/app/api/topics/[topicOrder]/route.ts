@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, ensureCourseTables, initDb } from "@/lib/db";
+import { db, ensureCourseTables, initDb, getPaymentMaxTopic } from "@/lib/db";
 
 type RouteContext = {
   params: Promise<{ topicOrder: string }>;
@@ -7,7 +7,7 @@ type RouteContext = {
 
 const PASSING_SCORE = 70;
 
-async function getUnlockedUntil(userId: string, status: string | null) {
+async function getUnlockedUntil(userId: string, status: string | null, paymentMaxTopic: number) {
   const progressResult = await db.execute({
     sql: `
       SELECT topic_order, passed
@@ -17,11 +17,20 @@ async function getUnlockedUntil(userId: string, status: string | null) {
     args: [userId],
   });
 
-  let unlockedUntil = status === "activo" ? 1 : 0;
+  // Base: first topic if account is active and has at least 1 approved cuota
+  let unlockedUntil = (status === "activo" && paymentMaxTopic >= 1) ? 1 : 0;
 
   for (const row of progressResult.rows) {
     if (Number(row.passed) === 1) {
-      unlockedUntil = Math.max(unlockedUntil, Number(row.topic_order) + 1);
+      const nextTopic = Number(row.topic_order) + 1;
+      // Only unlock next topic if it's within the payment limit
+      if (nextTopic <= paymentMaxTopic) {
+        unlockedUntil = Math.max(unlockedUntil, nextTopic);
+      } else {
+        // They passed a topic but payment doesn't cover the next one;
+        // still credit this topic as the furthest unlocked
+        unlockedUntil = Math.max(unlockedUntil, Number(row.topic_order));
+      }
     }
   }
 
@@ -60,9 +69,18 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "Tema no encontrado" }, { status: 404 });
     }
 
-    const { unlockedUntil, progressRows } = await getUnlockedUntil(userId, status);
+    const paymentMaxTopic = await getPaymentMaxTopic(userId);
+    const { unlockedUntil, progressRows } = await getUnlockedUntil(userId, status, paymentMaxTopic);
 
-    if (status !== "activo" || topicOrderNumber > unlockedUntil) {
+    if (status !== "activo") {
+      return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
+    }
+
+    if (topicOrderNumber > paymentMaxTopic) {
+      return NextResponse.json({ error: "Pago requerido", needsPayment: true, paymentMaxTopic }, { status: 403 });
+    }
+
+    if (topicOrderNumber > unlockedUntil) {
       return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
     }
 
@@ -135,8 +153,16 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "userId es requerido" }, { status: 400 });
     }
 
-    const { unlockedUntil } = await getUnlockedUntil(userId, status);
-    if (status !== "activo" || topicOrderNumber > unlockedUntil) {
+    const paymentMaxTopic = await getPaymentMaxTopic(userId);
+    const { unlockedUntil } = await getUnlockedUntil(userId, status, paymentMaxTopic);
+
+    if (status !== "activo") {
+      return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
+    }
+    if (topicOrderNumber > paymentMaxTopic) {
+      return NextResponse.json({ error: "Pago requerido", needsPayment: true }, { status: 403 });
+    }
+    if (topicOrderNumber > unlockedUntil) {
       return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
     }
 

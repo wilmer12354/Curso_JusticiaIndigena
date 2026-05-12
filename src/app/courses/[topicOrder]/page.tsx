@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText } from "lucide-react";
+import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
 
@@ -57,6 +57,7 @@ export default function TopicDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [examResult, setExamResult] = useState<ExamResult | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [needsPayment, setNeedsPayment] = useState(false);
   const answeredCount = examQuestions.filter((question) => selectedAnswers[question.id]).length;
   const isExamComplete = examQuestions.length > 0 && answeredCount === examQuestions.length;
 
@@ -99,6 +100,9 @@ export default function TopicDetailPage() {
 
         if (!topicRes.ok) {
           const topicData = await topicRes.json().catch(() => null);
+          if (topicRes.status === 403 && topicData?.needsPayment) {
+            setNeedsPayment(true);
+          }
           setError(topicData?.error ?? "No se pudo cargar este tema.");
           setLoading(false);
           return;
@@ -240,10 +244,32 @@ export default function TopicDetailPage() {
             Volver a mis cursos
           </Link>
 
-          <div className="glass-card max-w-2xl">
-            <h1 className="text-3xl font-bold mb-3">Tema no disponible</h1>
-            <p className="text-slate-400">{error || "No tienes acceso a este tema por ahora."}</p>
-          </div>
+          {needsPayment ? (
+            <div className="glass-card max-w-2xl" style={{ borderColor: "rgba(99,102,241,0.3)" }}>
+              <div style={{
+                width: 56, height: 56, borderRadius: "50%",
+                background: "rgba(99,102,241,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                marginBottom: 20,
+              }}>
+                <CreditCard size={26} color="#818cf8" />
+              </div>
+              <h1 className="text-3xl font-bold mb-3">Pago requerido</h1>
+              <p className="text-slate-400 mb-6">
+                Para acceder al <strong className="text-white">Tema {params.topicOrder}</strong> debes pagar la siguiente cuota (140 Bs).
+                Envía el comprobante al número <strong className="text-white">71539769</strong> y notifica al administrador desde la página de cursos.
+              </p>
+              <Link href="/courses" className="btn btn-primary inline-flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Ir a mis cursos
+              </Link>
+            </div>
+          ) : (
+            <div className="glass-card max-w-2xl">
+              <h1 className="text-3xl font-bold mb-3">Tema no disponible</h1>
+              <p className="text-slate-400">{error || "No tienes acceso a este tema por ahora."}</p>
+            </div>
+          )}
         </main>
       </div>
     );

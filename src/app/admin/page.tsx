@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon } from "lucide-react";
 import { LogoutButton } from "../components/LogoutButton";
 
 type User = {
@@ -15,6 +15,18 @@ type User = {
   role: string;
   status: string;
   created_at: string;
+};
+
+type Payment = {
+  id: number;
+  userId: string;
+  cuota: number;
+  monto: number;
+  status: string;
+  createdAt: string | null;
+  userName: string | null;
+  userEmail: string | null;
+  userImage: string | null;
 };
 
 type ModalMode = "create" | "edit" | "delete" | null;
@@ -30,7 +42,10 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [activeSection, setActiveSection] = useState<"dashboard" | "users" | "pendientes">("dashboard");
+  const [activeSection, setActiveSection] = useState<"dashboard" | "users" | "pendientes" | "pagos">("dashboard");
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState<number | null>(null);
   const [activating, setActivating] = useState<string | null>(null);
 
   // Modal state
@@ -85,9 +100,34 @@ export default function AdminDashboard() {
     setUsersLoading(false);
   }, []);
 
+  // Fetch payments
+  const fetchPayments = useCallback(async () => {
+    setPaymentsLoading(true);
+    try {
+      const res = await fetch("/api/admin/payments");
+      if (res.ok) setPayments(await res.json());
+    } catch { /* ignore */ }
+    setPaymentsLoading(false);
+  }, []);
+
+  const handlePaymentAction = async (paymentId: number, status: "aprobado" | "rechazado") => {
+    setProcessingPayment(paymentId);
+    try {
+      await fetch(`/api/admin/payments/${paymentId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      fetchPayments();
+    } finally {
+      setProcessingPayment(null);
+    }
+  };
+
   useEffect(() => {
     if (!loading && (activeSection === "users" || activeSection === "pendientes")) fetchUsers();
-  }, [loading, activeSection, fetchUsers]);
+    if (!loading && activeSection === "pagos") fetchPayments();
+  }, [loading, activeSection, fetchUsers, fetchPayments]);
 
   // Filtered users
   const filtered = users.filter(
@@ -177,6 +217,7 @@ export default function AdminDashboard() {
   }
 
   const pending = users.filter((u) => u.status === "pendiente");
+  const pendingPayments = payments.filter((p) => p.status === "pendiente");
   const stats = [
     { label: "Total Estudiantes", value: users.length, icon: Users },
     { label: "Pendientes", value: pending.length, icon: Clock },
@@ -213,15 +254,20 @@ export default function AdminDashboard() {
             { id: "dashboard", label: "Dashboard", Icon: BookOpenCheck },
             { id: "users", label: "Estudiantes", Icon: Users },
             { id: "pendientes", label: "Pendientes", Icon: Clock },
+            { id: "pagos", label: "Pagos", Icon: CreditCard },
           ].map(({ id, label, Icon }) => (
             <button
               key={id}
-              onClick={() => setActiveSection(id as "dashboard" | "users" | "pendientes")}
+              onClick={() => setActiveSection(id as "dashboard" | "users" | "pendientes" | "pagos")}
               style={{
                 display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
                 borderRadius: 12, border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 500,
-                background: activeSection === id ? (id === "pendientes" ? "rgba(245,158,11,0.12)" : "rgba(194,65,12,0.15)") : "transparent",
-                color: activeSection === id ? (id === "pendientes" ? "#f59e0b" : "var(--primary)") : "#94a3b8",
+                background: activeSection === id
+                  ? (id === "pendientes" ? "rgba(245,158,11,0.12)" : id === "pagos" ? "rgba(99,102,241,0.15)" : "rgba(194,65,12,0.15)")
+                  : "transparent",
+                color: activeSection === id
+                  ? (id === "pendientes" ? "#f59e0b" : id === "pagos" ? "#818cf8" : "var(--primary)")
+                  : "#94a3b8",
                 transition: "all 0.2s",
                 position: "relative",
                 whiteSpace: "nowrap",
@@ -236,6 +282,13 @@ export default function AdminDashboard() {
                   padding: "1px 7px", lineHeight: 1.6,
                 }}>{pending.length}</span>
               )}
+              {id === "pagos" && pendingPayments.length > 0 && (
+                <span style={{
+                  marginLeft: "auto", background: "#818cf8", color: "#fff",
+                  fontSize: 11, fontWeight: 800, borderRadius: 999,
+                  padding: "1px 7px", lineHeight: 1.6,
+                }}>{pendingPayments.length}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -249,10 +302,10 @@ export default function AdminDashboard() {
       <main style={{ flex: 1, padding: isMobile ? "1rem" : "2.5rem 3rem", overflowY: "auto" }}>
         <header style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff,#94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
-            {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : "Gestión de Estudiantes"}
+            {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : "Gestión de Estudiantes"}
           </h1>
           <p style={{ color: "#64748b", fontSize: 14 }}>
-            {activeSection === "dashboard" ? "Gestiona los contenidos de Justicia Indígena." : activeSection === "pendientes" ? "Verifica los pagos y activa las cuentas de los estudiantes." : "Visualiza, crea, edita y elimina estudiantes."}
+            {activeSection === "dashboard" ? "Gestiona los contenidos de Justicia Indígena." : activeSection === "pendientes" ? "Verifica los pagos y activa las cuentas de los estudiantes." : activeSection === "pagos" ? "Aprueba o rechaza las cuotas de pago de los estudiantes." : "Visualiza, crea, edita y elimina estudiantes."}
           </p>
         </header>
 
@@ -345,6 +398,124 @@ export default function AdminDashboard() {
                       <UserCheck size={15} />
                       {activating === u.id ? "Activando..." : "Activar"}
                     </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* PAGOS section */}
+        {activeSection === "pagos" && (
+          <>
+            <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
+              <button onClick={fetchPayments} title="Recargar" style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}>
+                <RefreshCw size={16} className={paymentsLoading ? "animate-spin" : ""} />
+              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                {(["pendiente", "aprobado", "rechazado"] as const).map((s) => (
+                  <span key={s} style={{
+                    padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    background: s === "aprobado" ? "rgba(34,197,94,0.1)" : s === "rechazado" ? "rgba(248,113,113,0.1)" : "rgba(99,102,241,0.1)",
+                    color: s === "aprobado" ? "#4ade80" : s === "rechazado" ? "#f87171" : "#818cf8",
+                    border: `1px solid ${s === "aprobado" ? "rgba(34,197,94,0.2)" : s === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.2)"}`,
+                  }}>
+                    {s === "pendiente" ? `${payments.filter(p => p.status === "pendiente").length} pendientes` : s === "aprobado" ? `${payments.filter(p => p.status === "aprobado").length} aprobados` : `${payments.filter(p => p.status === "rechazado").length} rechazados`}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {paymentsLoading ? (
+              <div style={{ textAlign: "center", padding: 48, color: "#64748b" }}>Cargando...</div>
+            ) : payments.length === 0 ? (
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: "4rem", textAlign: "center" }}>
+                <CreditCard size={48} color="#818cf8" style={{ margin: "0 auto 1rem" }} />
+                <p style={{ color: "#64748b", fontSize: 14 }}>No hay registros de pago aún.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {payments.map((p) => (
+                  <div key={p.id} style={{
+                    background: "rgba(255,255,255,0.02)",
+                    border: `1px solid ${p.status === "aprobado" ? "rgba(34,197,94,0.2)" : p.status === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.15)"}`,
+                    borderRadius: 14, padding: "1.1rem 1.4rem",
+                    display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
+                  }}>
+                    {p.userImage ? (
+                      <img src={p.userImage} alt={p.userName ?? ""} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(99,102,241,0.3)", flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: "#818cf8", flexShrink: 0 }}>
+                        {(p.userName ?? "?")[0]?.toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: "#f1f5f9", marginBottom: 2 }}>{p.userName || "—"}</div>
+                      <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.userEmail}</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Cuota</span>
+                      <span style={{ fontSize: 20, fontWeight: 800, color: "#818cf8" }}>{p.cuota}</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Monto</span>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.monto} Bs</span>
+                    </div>
+                    <div style={{ flexShrink: 0 }}>
+                      <span style={{
+                        padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                        background: p.status === "aprobado" ? "rgba(34,197,94,0.1)" : p.status === "rechazado" ? "rgba(248,113,113,0.1)" : "rgba(99,102,241,0.1)",
+                        color: p.status === "aprobado" ? "#4ade80" : p.status === "rechazado" ? "#f87171" : "#818cf8",
+                        border: `1px solid ${p.status === "aprobado" ? "rgba(34,197,94,0.2)" : p.status === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.2)"}`,
+                      }}>
+                        {p.status === "aprobado" ? "Aprobado" : p.status === "rechazado" ? "Rechazado" : "Pendiente"}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12, color: "#475569", whiteSpace: "nowrap", flexShrink: 0 }}>
+                      {p.createdAt ? new Date(p.createdAt).toLocaleDateString("es-BO") : "—"}
+                    </div>
+                    {p.status === "pendiente" && (
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        <button
+                          onClick={() => handlePaymentAction(p.id, "aprobado")}
+                          disabled={processingPayment === p.id}
+                          title="Aprobar pago"
+                          style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "8px 16px", borderRadius: 10,
+                            background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)",
+                            color: "#4ade80", fontSize: 13, fontWeight: 700,
+                            cursor: processingPayment === p.id ? "not-allowed" : "pointer",
+                            opacity: processingPayment === p.id ? 0.6 : 1, transition: "all 0.2s",
+                          }}
+                        >
+                          <BadgeCheck size={15} />
+                          {processingPayment === p.id ? "..." : "Aprobar"}
+                        </button>
+                        <button
+                          onClick={() => handlePaymentAction(p.id, "rechazado")}
+                          disabled={processingPayment === p.id}
+                          title="Rechazar pago"
+                          style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "8px 16px", borderRadius: 10,
+                            background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
+                            color: "#f87171", fontSize: 13, fontWeight: 700,
+                            cursor: processingPayment === p.id ? "not-allowed" : "pointer",
+                            opacity: processingPayment === p.id ? 0.6 : 1, transition: "all 0.2s",
+                          }}
+                        >
+                          <XOctagon size={15} />
+                          {processingPayment === p.id ? "..." : "Rechazar"}
+                        </button>
+                      </div>
+                    )}
+                    {p.status !== "pendiente" && (
+                      <div style={{ flexShrink: 0 }}>
+                        {p.status === "aprobado"
+                          ? <ThumbsUp size={18} color="#4ade80" />
+                          : <ThumbsDown size={18} color="#f87171" />}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

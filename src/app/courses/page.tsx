@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2 } from "lucide-react";
+import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2 } from "lucide-react";
 import { LogoutButton } from "../components/LogoutButton";
 
 type StudentUser = {
@@ -20,11 +20,25 @@ type Topic = {
   videoUrl: string;
   unlocked: boolean;
   locked: boolean;
+  paymentBlocked: boolean;
   isCurrent: boolean;
   score: number;
   attempts: number;
   passed: boolean;
   completedAt: string | null;
+};
+
+type Payment = {
+  id: number;
+  cuota: number;
+  monto: number;
+  status: string;
+};
+
+const CUOTA_LABELS: Record<number, string> = {
+  1: "1ª cuota (Temas 1–8)",
+  2: "2ª cuota (Temas 9–16)",
+  3: "3ª cuota (Temas 17–21)",
 };
 
 export default function CoursesPage() {
@@ -34,6 +48,11 @@ export default function CoursesPage() {
   const [status, setStatus] = useState<string>("activo");
   const [topics, setTopics] = useState<Topic[]>([]);
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [nextCuotaNeeded, setNextCuotaNeeded] = useState<number | null>(null);
+  const [paymentMaxTopic, setPaymentMaxTopic] = useState<number>(0);
+  const [requestingCuota, setRequestingCuota] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -50,14 +69,21 @@ export default function CoursesPage() {
               setStatus(nextStatus);
 
               if (nextStatus === "activo") {
-                const topicsRes = await fetch(
-                  `/api/course-topics?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(nextStatus)}`
-                );
+                const [topicsRes, paymentsRes] = await Promise.all([
+                  fetch(`/api/course-topics?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(nextStatus)}`),
+                  fetch(`/api/payments?userId=${encodeURIComponent(firebaseUser.uid)}`),
+                ]);
 
                 if (topicsRes.ok) {
                   const topicsData = await topicsRes.json();
                   setTopics(topicsData.topics ?? []);
                   setCurrentTopic(topicsData.currentTopic ?? null);
+                  setNextCuotaNeeded(topicsData.nextCuotaNeeded ?? null);
+                  setPaymentMaxTopic(topicsData.paymentMaxTopic ?? 0);
+                }
+                if (paymentsRes.ok) {
+                  const paymentsData = await paymentsRes.json();
+                  setPayments(paymentsData.payments ?? []);
                 }
               } else {
                 setTopics([]);
@@ -79,6 +105,35 @@ export default function CoursesPage() {
 
     return () => unsubscribe();
   }, [router]);
+
+  const handleRequestPayment = async (cuota: number) => {
+    if (!user) return;
+    setRequestingCuota(true);
+    setPaymentMessage("");
+    try {
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, cuota }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPaymentMessage(data.message ?? "Solicitud enviada. El administrador revisará tu pago.");
+        // Refresh payments
+        const pr = await fetch(`/api/payments?userId=${encodeURIComponent(user.id)}`);
+        if (pr.ok) {
+          const pd = await pr.json();
+          setPayments(pd.payments ?? []);
+        }
+      } else {
+        setPaymentMessage(data.error ?? "Error al enviar la solicitud.");
+      }
+    } catch {
+      setPaymentMessage("Error de red. Intenta de nuevo.");
+    } finally {
+      setRequestingCuota(false);
+    }
+  };
 
   if (loading || !user) {
     return (
@@ -107,7 +162,6 @@ export default function CoursesPage() {
           alignItems: "center",
           gap: "1.5rem",
         }}>
-          {/* Animated clock icon */}
           <div style={{
             width: 80, height: 80, borderRadius: "50%",
             background: "rgba(245,158,11,0.12)",
@@ -173,6 +227,19 @@ export default function CoursesPage() {
     router.push(`/courses/${topicOrder}`);
   };
 
+  // Determine the status of nextCuota payment
+  const nextCuotaPayment = nextCuotaNeeded != null
+    ? payments.find((p) => p.cuota === nextCuotaNeeded)
+    : null;
+  const nextCuotaStatus = nextCuotaPayment?.status ?? null;
+
+  // Payment banner: show when user has completed all unlocked topics and needs next cuota
+  const allUnlockedPassed = paymentMaxTopic > 0 && topics
+    .filter((t) => t.topicOrder <= paymentMaxTopic)
+    .every((t) => t.passed);
+
+  const showPaymentBanner = nextCuotaNeeded != null && (allUnlockedPassed || paymentMaxTopic === 0);
+
   return (
     <div className="min-h-screen">
       <nav className="border-b border-white/5 bg-black/20 backdrop-blur-md sticky top-0 z-50">
@@ -193,10 +260,163 @@ export default function CoursesPage() {
       </nav>
 
       <main className="container py-12">
-        <header className="mb-12">
+        <header className="mb-8">
           <h1 className="!text-4xl">Tus Cursos de Formación</h1>
           <p className="text-slate-400 mt-2">Continúa tu aprendizaje sobre los sistemas de justicia comunitaria.</p>
         </header>
+
+        {/* Payment progress bar */}
+        {status === "activo" && (
+          <div style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 16,
+            padding: "1rem 1.5rem",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
+          }}>
+            <CreditCard size={20} color="#818cf8" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9", marginBottom: 6 }}>
+                Progreso de pagos — {Math.min(payments.filter(p => p.status === "aprobado").length, 3)} de 3 cuotas aprobadas
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[1, 2, 3].map((c) => {
+                  const pay = payments.find(p => p.cuota === c);
+                  const s = pay?.status;
+                  return (
+                    <div key={c} style={{
+                      flex: 1, height: 8, borderRadius: 999,
+                      background: s === "aprobado" ? "#4ade80" : s === "pendiente" ? "#f59e0b" : "rgba(255,255,255,0.1)",
+                      transition: "background 0.3s",
+                    }} title={`Cuota ${c}: ${s ?? "no solicitada"}`} />
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
+                {[1, 2, 3].map((c) => {
+                  const pay = payments.find(p => p.cuota === c);
+                  const s = pay?.status;
+                  return (
+                    <span key={c} style={{ fontSize: 11, color: s === "aprobado" ? "#4ade80" : s === "pendiente" ? "#f59e0b" : "#475569" }}>
+                      Cuota {c}: {s === "aprobado" ? "Aprobada" : s === "pendiente" ? "En revisión" : "No pagada"}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ fontSize: 14, color: "#64748b", flexShrink: 0 }}>
+              Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * 140} / 420 Bs</strong>
+            </div>
+          </div>
+        )}
+
+        {/* Payment banner when cuota needed */}
+        {showPaymentBanner && (
+          <div style={{
+            background: nextCuotaStatus === "pendiente" ? "rgba(245,158,11,0.06)" : "rgba(99,102,241,0.06)",
+            border: `1px solid ${nextCuotaStatus === "pendiente" ? "rgba(245,158,11,0.25)" : "rgba(99,102,241,0.25)"}`,
+            borderRadius: 16,
+            padding: "1.25rem 1.5rem",
+            marginBottom: 28,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: "50%",
+              background: nextCuotaStatus === "pendiente" ? "rgba(245,158,11,0.15)" : "rgba(99,102,241,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              {nextCuotaStatus === "pendiente"
+                ? <Clock size={22} color="#f59e0b" />
+                : <CreditCard size={22} color="#818cf8" />}
+            </div>
+            <div style={{ flex: 1 }}>
+              {nextCuotaStatus === "pendiente" ? (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#f59e0b", marginBottom: 2 }}>Pago en revisión</div>
+                  <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                    Tu solicitud de la {CUOTA_LABELS[nextCuotaNeeded!]} está siendo verificada por el administrador. Te avisaremos cuando sea aprobada.
+                  </div>
+                </>
+              ) : nextCuotaStatus === "rechazado" ? (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#f87171", marginBottom: 2 }}>Pago rechazado</div>
+                  <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                    Tu pago de la {CUOTA_LABELS[nextCuotaNeeded!]} fue rechazado. Contacta al administrador y vuelve a enviar el comprobante.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#818cf8", marginBottom: 2 }}>
+                    {paymentMaxTopic === 0 ? "Paga tu primera cuota para comenzar" : `¡Completaste el bloque! Paga la siguiente cuota`}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                    {CUOTA_LABELS[nextCuotaNeeded!]} — 140 Bs. Envía el comprobante de pago al número <strong style={{ color: "#f1f5f9" }}>71539769</strong> y luego haz clic en el botón.
+                  </div>
+                </>
+              )}
+              {paymentMessage && (
+                <div style={{ marginTop: 8, fontSize: 13, color: nextCuotaStatus === "rechazado" ? "#f87171" : "#4ade80" }}>
+                  {paymentMessage}
+                </div>
+              )}
+            </div>
+            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && (
+              <button
+                onClick={() => handleRequestPayment(nextCuotaNeeded!)}
+                disabled={requestingCuota}
+                style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "10px 20px", borderRadius: 10,
+                  background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)",
+                  color: "#818cf8", fontSize: 14, fontWeight: 700,
+                  cursor: requestingCuota ? "not-allowed" : "pointer",
+                  opacity: requestingCuota ? 0.7 : 1,
+                  transition: "all 0.2s", flexShrink: 0,
+                }}
+              >
+                {requestingCuota ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CreditCard size={16} />}
+                {requestingCuota ? "Enviando..." : "Ya pagué — Notificar"}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Also show "Pay all at once" button if no payments yet */}
+        {status === "activo" && payments.length === 0 && (
+          <div style={{
+            background: "rgba(99,102,241,0.04)",
+            border: "1px dashed rgba(99,102,241,0.2)",
+            borderRadius: 16, padding: "1rem 1.5rem",
+            marginBottom: 20, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          }}>
+            <AlertCircle size={16} color="#818cf8" />
+            <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>
+              ¿Quieres pagar el curso completo (420 Bs)? Envía el comprobante al <strong style={{ color: "#f1f5f9" }}>71539769</strong> y haz clic en:
+            </span>
+            <button
+              onClick={() => handleRequestPayment(0)}
+              disabled={requestingCuota}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "9px 18px", borderRadius: 10,
+                background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
+                color: "#818cf8", fontSize: 13, fontWeight: 700,
+                cursor: requestingCuota ? "not-allowed" : "pointer",
+                opacity: requestingCuota ? 0.7 : 1, transition: "all 0.2s",
+              }}
+            >
+              <CreditCard size={15} />
+              Pago completo (420 Bs)
+            </button>
+          </div>
+        )}
 
         {status === "activo" && topics.length === 0 ? (
           <div className="glass-card max-w-2xl">
@@ -238,7 +458,9 @@ export default function CoursesPage() {
                   }`}
                 >
                   <div className="aspect-video rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden relative">
-                    {topic.locked ? (
+                    {topic.paymentBlocked ? (
+                      <CreditCard className="w-12 h-12 text-indigo-400/60" />
+                    ) : topic.locked ? (
                       <Lock className="w-12 h-12 text-slate-500" />
                     ) : topic.passed ? (
                       <CheckCircle2 className="w-12 h-12 text-green-400" />
@@ -248,12 +470,27 @@ export default function CoursesPage() {
                     <div className="absolute top-3 left-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
                       Tema {topic.topicOrder}
                     </div>
+                    {topic.paymentBlocked && (
+                      <div className="absolute bottom-3 left-3 right-3 rounded-lg bg-black/70 px-2 py-1 text-xs text-indigo-300 text-center font-semibold">
+                        Requiere pago
+                      </div>
+                    )}
                   </div>
 
                   <div>
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
-                      <span className={`px-2 py-0.5 rounded ${topic.unlocked ? "bg-primary/10 text-primary" : "bg-slate-700/50 text-slate-300"}`}>
-                        {topic.unlocked ? (topic.passed ? "Completado" : "Disponible") : "Bloqueado"}
+                      <span className={`px-2 py-0.5 rounded ${
+                        topic.unlocked
+                          ? "bg-primary/10 text-primary"
+                          : topic.paymentBlocked
+                            ? "bg-indigo-500/10 text-indigo-400"
+                            : "bg-slate-700/50 text-slate-300"
+                      }`}>
+                        {topic.unlocked
+                          ? (topic.passed ? "Completado" : "Disponible")
+                          : topic.paymentBlocked
+                            ? "Requiere pago"
+                            : "Bloqueado"}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold mb-4">{topic.title}</h3>
@@ -275,11 +512,15 @@ export default function CoursesPage() {
                   </div>
 
                   <button
-                    onClick={() => handleContinue(topic.topicOrder)}
+                    onClick={() => topic.unlocked ? handleContinue(topic.topicOrder) : undefined}
                     disabled={!topic.unlocked}
                     className={`w-full mt-auto ${topic.unlocked ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
                   >
-                    {topic.unlocked ? "Continuar con el curso" : "Tema bloqueado"}
+                    {topic.unlocked
+                      ? "Continuar con el curso"
+                      : topic.paymentBlocked
+                        ? "Requiere pago de cuota"
+                        : "Tema bloqueado"}
                   </button>
                 </div>
               ))}
@@ -287,7 +528,13 @@ export default function CoursesPage() {
           </>
         )}
       </main>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
-

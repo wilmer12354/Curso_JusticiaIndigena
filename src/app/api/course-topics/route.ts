@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, ensureCourseTables, initDb } from "@/lib/db";
+import { db, ensureCourseTables, initDb, getPaymentMaxTopic } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,18 +32,28 @@ export async function GET(request: NextRequest) {
       progressResult.rows.map((row) => [Number(row.topic_order), row])
     );
 
-    let unlockedUntil = status === "activo" ? 1 : 0;
+    // Payment-based max topic
+    const paymentMaxTopic = await getPaymentMaxTopic(userId);
+
+    let unlockedUntil = (status === "activo" && paymentMaxTopic >= 1) ? 1 : 0;
 
     for (const row of progressResult.rows) {
       if (Number(row.passed) === 1) {
-        unlockedUntil = Math.max(unlockedUntil, Number(row.topic_order) + 1);
+        const nextTopic = Number(row.topic_order) + 1;
+        if (nextTopic <= paymentMaxTopic) {
+          unlockedUntil = Math.max(unlockedUntil, nextTopic);
+        } else {
+          unlockedUntil = Math.max(unlockedUntil, Number(row.topic_order));
+        }
       }
     }
 
     const topics = topicsResult.rows.map((row, index) => {
       const topicOrder = Number(row.topic_order);
       const progress = progressMap.get(topicOrder);
-      const unlocked = status === "activo" && topicOrder <= unlockedUntil;
+      const withinPayment = topicOrder <= paymentMaxTopic;
+      const unlocked = status === "activo" && withinPayment && topicOrder <= unlockedUntil;
+      const paymentBlocked = status === "activo" && !withinPayment;
 
       return {
         id: topicOrder,
@@ -53,6 +63,7 @@ export async function GET(request: NextRequest) {
         videoUrl: row.video_url ? String(row.video_url) : "",
         unlocked,
         locked: !unlocked,
+        paymentBlocked,
         isCurrent: unlocked && topicOrder === unlockedUntil,
         score: progress ? Number(progress.score ?? 0) : 0,
         attempts: progress ? Number(progress.attempts ?? 0) : 0,
@@ -64,9 +75,16 @@ export async function GET(request: NextRequest) {
 
     const currentTopic = topics.find((topic) => topic.isCurrent) ?? topics.find((topic) => topic.unlocked) ?? null;
 
+    // Determine next cuota needed
+    const nextCuotaNeeded = paymentMaxTopic === 0 ? 1 :
+      paymentMaxTopic === 8 ? 2 :
+      paymentMaxTopic === 16 ? 3 : null;
+
     return NextResponse.json({
       topics,
       currentTopic,
+      paymentMaxTopic,
+      nextCuotaNeeded,
     });
   } catch (error) {
     console.error(error);

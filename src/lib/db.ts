@@ -33,6 +33,17 @@ export async function initDb() {
     );
   `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      cuota INTEGER NOT NULL,
+      monto INTEGER NOT NULL DEFAULT 140,
+      status TEXT DEFAULT 'pendiente',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   // Migrations for existing tables (safe - ignore if column already exists)
   const migrations = [
     "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'pendiente'",
@@ -43,6 +54,26 @@ export async function initDb() {
   }
 
   usersInitialized = true;
+}
+
+/**
+ * Returns the maximum topic order a user can access based on approved payments.
+ * Cuota 1 (approved) → topics 1-8
+ * Cuota 2 (approved) → topics 9-16
+ * Cuota 3 (approved) → topics 17+ (all remaining)
+ */
+export async function getPaymentMaxTopic(userId: string): Promise<number> {
+  const result = await db.execute({
+    sql: `SELECT cuota FROM payments WHERE user_id = ? AND status = 'aprobado' ORDER BY cuota ASC`,
+    args: [userId],
+  });
+
+  const approvedCuotas = new Set(result.rows.map((r) => Number(r.cuota)));
+
+  if (approvedCuotas.has(3) || approvedCuotas.size === 3) return 999; // All topics
+  if (approvedCuotas.has(2)) return 16;
+  if (approvedCuotas.has(1)) return 8;
+  return 0;
 }
 
 export async function ensureCourseTables() {

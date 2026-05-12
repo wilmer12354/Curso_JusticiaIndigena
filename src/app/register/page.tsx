@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import { Shield, User, Phone, CreditCard, CheckCircle, ArrowLeft, X } from "lucide-react";
+import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import Swal from "sweetalert2";
+
+const MAX_RECEIPT_BYTES = 3 * 1024 * 1024;
+const RECEIPT_ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
+const PRICE_PER_MONTH = 140;
+
+type PaymentMonths = 1 | 2 | 3;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +23,64 @@ export default function RegisterPage() {
   const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [hasPaid, setHasPaid] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
+  const [receiptError, setReceiptError] = useState("");
+  const [paymentMonths, setPaymentMonths] = useState<PaymentMonths>(1);
+
+  const selectPaymentPlan = (m: PaymentMonths) => {
+    if (m !== paymentMonths) {
+      setReceiptFile(null);
+      setReceiptError("");
+      setReceiptPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    }
+    setPaymentMonths(m);
+  };
+
+  const totalBs = paymentMonths * PRICE_PER_MONTH;
+
+  useEffect(() => {
+    return () => {
+      if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+    };
+  }, [receiptPreviewUrl]);
+
+  const onReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setReceiptError("");
+    if (receiptPreviewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl);
+      setReceiptPreviewUrl(null);
+    }
+    if (!file) {
+      setReceiptFile(null);
+      return;
+    }
+    if (file.size > MAX_RECEIPT_BYTES) {
+      setReceiptFile(null);
+      setReceiptError("El archivo supera 3 MB. Elige una imagen más pequeña o comprime el PDF.");
+      e.target.value = "";
+      return;
+    }
+    const okMime =
+      file.type === "image/jpeg" ||
+      file.type === "image/png" ||
+      file.type === "image/webp" ||
+      file.type === "application/pdf";
+    if (!okMime) {
+      setReceiptFile(null);
+      setReceiptError("Formato no admitido. Usa JPG, PNG, WebP o PDF.");
+      e.target.value = "";
+      return;
+    }
+    setReceiptFile(file);
+    if (file.type.startsWith("image/")) {
+      setReceiptPreviewUrl(URL.createObjectURL(file));
+    }
+  };
 
   const validate = () => {
     let valid = true;
@@ -38,6 +101,10 @@ export default function RegisterPage() {
 
   const handleGoogleSignUp = async () => {
     if (!validate()) return;
+    if (!receiptFile) {
+      setError("Debes adjuntar el comprobante de pago antes de continuar.");
+      return;
+    }
     setError(null);
     setStep("loading");
 
@@ -45,21 +112,25 @@ export default function RegisterPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Guardar en Turso con nombre, teléfono y datos de Google
+      const formData = new FormData();
+      formData.append("id", user.uid);
+      formData.append("name", (name.trim() || user.displayName) ?? "");
+      formData.append("email", user.email ?? "");
+      formData.append("image", user.photoURL ?? "");
+      formData.append("phone", phone.trim());
+      formData.append("enrollmentMonths", String(paymentMonths));
+      formData.append("receipt", receiptFile);
+
       const res = await fetch("/api/sync-user", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: user.uid,
-          name: name.trim() || user.displayName,
-          email: user.email,
-          image: user.photoURL,
-          phone: phone.trim(),
-        }),
+        body: formData,
       });
 
       if (!res.ok) {
-        throw new Error("Error al guardar los datos.");
+        const errData = await res.json().catch(() => ({}));
+        const msg =
+          typeof errData.error === "string" ? errData.error : "Error al guardar los datos.";
+        throw new Error(msg);
       }
 
       // Verificar rol y redirigir
@@ -74,11 +145,12 @@ export default function RegisterPage() {
       } else {
         router.push("/courses");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStep("form");
-      if (err.code !== "auth/popup-closed-by-user") {
-        setError("Ocurrió un error al crear la cuenta. Inténtalo de nuevo.");
-      }
+      const code = err && typeof err === "object" && "code" in err ? String((err as { code?: string }).code) : "";
+      if (code === "auth/popup-closed-by-user") return;
+      const message = err instanceof Error ? err.message : "Ocurrió un error al crear la cuenta. Inténtalo de nuevo.";
+      setError(message);
     }
   };
 
@@ -99,7 +171,11 @@ export default function RegisterPage() {
             Volver
           </Link>
           <div className="register-logo">
-            <Shield className="w-8 h-8 text-primary" />
+          <img
+            src="/logo-cepabol.png"
+            alt="Logo CEPABOL"
+            className="w-12 h-12 object-contain rounded-full bg-white/10 p-1 backdrop-blur-sm"
+          />
             <span className="register-logo-text">CEPABOL</span>
           </div>
         </div>
@@ -190,6 +266,36 @@ export default function RegisterPage() {
               Pago del Curso
             </h2>
 
+            <p className="register-label" style={{ marginBottom: 8 }}>
+              ¿Cuántos meses estás pagando en este comprobante?
+            </p>
+            <p className="register-google-desc" style={{ marginBottom: 14 }}>
+              Cada mes cuesta <strong className="text-slate-200">{PRICE_PER_MONTH} Bs</strong>. El administrador revisará el comprobante y{" "}
+              <strong className="text-slate-200">aprobará cada mes por separado</strong> para evitar errores si el monto no coincide.
+            </p>
+
+            <div className="register-plan-grid">
+              {(
+                [
+                  { m: 1 as const, title: "1 mes", hint: "Solo primer bloque del curso" },
+                  { m: 2 as const, title: "2 meses", hint: "Dos bloques (280 Bs en total)" },
+                  { m: 3 as const, title: "3 meses (completo)", hint: "Curso completo (420 Bs en total)" },
+                ] as const
+              ).map(({ m, title, hint }) => (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={step === "loading"}
+                  onClick={() => selectPaymentPlan(m)}
+                  className={`register-plan-option ${paymentMonths === m ? "register-plan-option-active" : ""}`}
+                >
+                  <span className="register-plan-title">{title}</span>
+                  <span className="register-plan-price">{m * PRICE_PER_MONTH} Bs</span>
+                  <span className="register-plan-hint">{hint}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="register-qr-box">
               <div className="register-qr-badge">
                 <CheckCircle className="w-4 h-4" />
@@ -208,11 +314,12 @@ export default function RegisterPage() {
                 />
               </div>
               <div className="register-qr-amount">
-                <span className="amount-label">Monto a pagar</span>
-                <span className="amount-value">Bs. 150</span>
+                <span className="amount-label">Monto a pagar (según tu elección)</span>
+                <span className="amount-value">Bs. {totalBs}</span>
               </div>
               <p className="register-qr-note">
-                💡 Guarda el comprobante de pago. Puedes enviarlo por WhatsApp al administrador.
+                Transfiere exactamente <strong className="text-slate-300">{totalBs} Bs</strong>{" "}
+                ({paymentMonths === 1 ? "1 mes" : `${paymentMonths} meses`}). Guarda el comprobante para adjuntarlo abajo.
               </p>
             </div>
           </section>
@@ -232,7 +339,10 @@ export default function RegisterPage() {
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">¿Ya realizó el pago?</span>
               <button
                 type="button"
-                onClick={() => setHasPaid(true)}
+                onClick={() => {
+                  setHasPaid(true);
+                  setReceiptError("");
+                }}
                 className={`px-4 py-2 rounded-md text-sm font-bold transition-colors ${hasPaid ? "bg-green-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
               >
@@ -241,17 +351,54 @@ export default function RegisterPage() {
             </div>
 
             {hasPaid && (
-              <div className="mb-6 p-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm font-medium border border-green-200 dark:border-green-800">
-                Si es así, mande el comprobante al <strong className="text-green-900 dark:text-green-100 font-bold">71539769</strong> e ingrese a continuación con su correo de Google.
+              <div className="mb-4 space-y-3">
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm font-medium border border-green-200 dark:border-green-800">
+                  Adjunta el comprobante que respalde <strong className="text-green-900 dark:text-green-100">{totalBs} Bs</strong> ({paymentMonths === 1 ? "1 mes" : `${paymentMonths} meses`}). Opcionalmente también puedes enviarlo por WhatsApp al{" "}
+                  <strong className="text-green-900 dark:text-green-100 font-bold">71539769</strong>.
+                </div>
+                <label className="register-receipt-label">
+                  <Upload className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                  <span className="register-receipt-label-text">
+                    <span className="font-semibold text-slate-200">Comprobante de pago</span>
+                    <span className="text-xs text-slate-400 block mt-0.5">JPG, PNG, WebP o PDF · máx. 3 MB</span>
+                  </span>
+                  <input
+                    type="file"
+                    accept={RECEIPT_ACCEPT}
+                    onChange={onReceiptChange}
+                    disabled={step === "loading"}
+                    className="register-receipt-input"
+                  />
+                </label>
+                {receiptFile && (
+                  <div className="text-sm text-slate-300 flex flex-col gap-2">
+                    <span className="font-medium text-emerald-400">✓ Archivo listo: {receiptFile.name}</span>
+                    {receiptPreviewUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={receiptPreviewUrl}
+                        alt="Vista previa del comprobante"
+                        className="max-h-40 rounded-lg border border-slate-600 object-contain w-auto"
+                      />
+                    )}
+                    {receiptFile.type === "application/pdf" && (
+                      <span className="text-slate-400">Vista previa no disponible para PDF.</span>
+                    )}
+                  </div>
+                )}
+                {receiptError && <p className="register-field-error text-sm">{receiptError}</p>}
+                {!receiptFile && (
+                  <p className="text-sm text-amber-200/90">Sube tu comprobante para habilitar &quot;Continuar con Google&quot;.</p>
+                )}
               </div>
             )}
 
             <button
               id="btn-google-signup"
               onClick={handleGoogleSignUp}
-              disabled={step === "loading" || !hasPaid}
+              disabled={step === "loading" || !hasPaid || !receiptFile}
               className="register-google-btn"
-              style={!hasPaid ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
+              style={!hasPaid || !receiptFile ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
             >
               {step === "loading" ? (
                 <>

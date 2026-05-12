@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon } from "lucide-react";
+import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon, FileImage, Bell, Banknote } from "lucide-react";
+import { comprobantePublicUrl } from "@/lib/comprobante-public-url";
 import { LogoutButton } from "../components/LogoutButton";
 
 type User = {
@@ -27,6 +28,7 @@ type Payment = {
   userName: string | null;
   userEmail: string | null;
   userImage: string | null;
+  registrationReceipt: string | null;
 };
 
 type ModalMode = "create" | "edit" | "delete" | null;
@@ -47,6 +49,11 @@ export default function AdminDashboard() {
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [processingPayment, setProcessingPayment] = useState<number | null>(null);
   const [activating, setActivating] = useState<string | null>(null);
+  const [receiptModal, setReceiptModal] = useState<{
+    url: string;
+    isPdf: boolean;
+    studentLabel: string;
+  } | null>(null);
 
   // Modal state
   const [modalMode, setModalMode] = useState<ModalMode>(null);
@@ -55,6 +62,7 @@ export default function AdminDashboard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
     const updateViewport = () => setIsMobile(window.innerWidth < 1024);
@@ -125,9 +133,19 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    if (!loading && (activeSection === "users" || activeSection === "pendientes")) fetchUsers();
-    if (!loading && activeSection === "pagos") fetchPayments();
+    if (loading) return;
+    void Promise.all([fetchUsers(), fetchPayments()]);
+  }, [loading, fetchUsers, fetchPayments]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (activeSection === "users" || activeSection === "pendientes") fetchUsers();
+    else if (activeSection === "pagos") fetchPayments();
   }, [loading, activeSection, fetchUsers, fetchPayments]);
+
+  useEffect(() => {
+    setNotifOpen(false);
+  }, [activeSection]);
 
   // Filtered users
   const filtered = users.filter(
@@ -202,7 +220,7 @@ export default function AdminDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "activo" }),
       });
-      fetchUsers();
+      await Promise.all([fetchUsers(), fetchPayments()]);
     } finally {
       setActivating(null);
     }
@@ -218,10 +236,20 @@ export default function AdminDashboard() {
 
   const pending = users.filter((u) => u.status === "pendiente");
   const pendingPayments = payments.filter((p) => p.status === "pendiente");
+  const approvedRevenueBs = payments
+    .filter((p) => p.status === "aprobado")
+    .reduce((sum, p) => sum + p.monto, 0);
+  const notifTotal = pending.length + pendingPayments.length;
   const stats = [
-    { label: "Total Estudiantes", value: users.length, icon: Users },
-    { label: "Pendientes", value: pending.length, icon: Clock },
-    { label: "Activos", value: users.filter(u => u.status === "activo").length, icon: CheckCircle2 },
+    { label: "Total Estudiantes", value: users.length, icon: Users, variant: "default" as const },
+    { label: "Pendientes", value: pending.length, icon: Clock, variant: "warning" as const },
+    { label: "Activos", value: users.filter((u) => u.status === "activo").length, icon: CheckCircle2, variant: "default" as const },
+    {
+      label: "Ingresos aprobados",
+      value: `${approvedRevenueBs.toLocaleString("es-BO")} Bs`,
+      icon: Banknote,
+      variant: "success" as const,
+    },
   ];
 
   return (
@@ -299,35 +327,202 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main */}
-      <main style={{ flex: 1, padding: isMobile ? "1rem" : "2.5rem 3rem", overflowY: "auto" }}>
-        <header style={{ marginBottom: 32 }}>
+      <main style={{ flex: 1, padding: isMobile ? "1rem" : "2.5rem 3rem", overflowY: "auto", position: "relative" }}>
+        <header style={{ marginBottom: 32, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff,#94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
             {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : "Gestión de Estudiantes"}
           </h1>
           <p style={{ color: "#64748b", fontSize: 14 }}>
-            {activeSection === "dashboard" ? "Gestiona los contenidos de Justicia Indígena." : activeSection === "pendientes" ? "Verifica los pagos y activa las cuentas de los estudiantes." : activeSection === "pagos" ? "Aprueba o rechaza las cuotas de pago de los estudiantes." : "Visualiza, crea, edita y elimina estudiantes."}
+            {activeSection === "dashboard"
+              ? "Gestiona los contenidos de Justicia Indígena."
+              : activeSection === "pendientes"
+                ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (140 Bs) solo si el comprobante coincide con ese mes."
+                : activeSection === "pagos"
+                  ? "Cada fila es un mes (140 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
+                  : "Visualiza, crea, edita y elimina estudiantes."}
           </p>
+          </div>
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <button
+              type="button"
+              aria-label="Notificaciones"
+              aria-expanded={notifOpen}
+              onClick={() => setNotifOpen((o) => !o)}
+              style={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: notifOpen ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.05)",
+                color: "#cbd5e1",
+                cursor: "pointer",
+                transition: "background 0.2s",
+              }}
+            >
+              <Bell size={22} />
+              {notifTotal > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    minWidth: 18,
+                    height: 18,
+                    padding: "0 5px",
+                    borderRadius: 999,
+                    background: "#f59e0b",
+                    color: "#0f172a",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1,
+                  }}
+                >
+                  {notifTotal > 99 ? "99+" : notifTotal}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <>
+                <div
+                  role="presentation"
+                  onClick={() => setNotifOpen(false)}
+                  style={{ position: "fixed", inset: 0, zIndex: 45 }}
+                />
+                <div
+                  role="menu"
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "calc(100% + 8px)",
+                    width: isMobile ? "min(calc(100vw - 2rem), 320px)" : 300,
+                    zIndex: 46,
+                    background: "#141419",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 14,
+                    boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div style={{ padding: "12px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 12, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    Pendientes
+                  </div>
+                  {notifTotal === 0 ? (
+                    <div style={{ padding: "18px 14px", fontSize: 14, color: "#64748b" }}>No hay elementos nuevos por revisar.</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      {pending.length > 0 && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setActiveSection("pendientes");
+                            setNotifOpen(false);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            padding: "14px 16px",
+                            border: "none",
+                            borderBottom: "1px solid rgba(255,255,255,0.06)",
+                            background: "transparent",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            color: "#f1f5f9",
+                            fontSize: 14,
+                          }}
+                        >
+                          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <Clock size={18} color="#f59e0b" />
+                            Cuentas por activar
+                          </span>
+                          <span style={{ fontWeight: 800, color: "#f59e0b" }}>{pending.length}</span>
+                        </button>
+                      )}
+                      {pendingPayments.length > 0 && (
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setActiveSection("pagos");
+                            setNotifOpen(false);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: 12,
+                            padding: "14px 16px",
+                            border: "none",
+                            background: "transparent",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            color: "#f1f5f9",
+                            fontSize: 14,
+                          }}
+                        >
+                          <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <CreditCard size={18} color="#818cf8" />
+                            Pagos por revisar
+                          </span>
+                          <span style={{ fontWeight: 800, color: "#818cf8" }}>{pendingPayments.length}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </header>
 
         {activeSection === "dashboard" && (
           <>
             {/* Stats row */}
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3,1fr)", gap: 16, marginBottom: 28 }}>
-              {stats.map(({ label, value, icon: Icon }, i) => (
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 28 }}>
+              {stats.map(({ label, value, icon: Icon, variant }, i) => (
                 <div key={label} style={{
-                  background: "rgba(255,255,255,0.03)", border: `1px solid ${i === 1 ? "rgba(245,158,11,0.2)" : "rgba(255,255,255,0.08)"}`,
+                  background: "rgba(255,255,255,0.03)",
+                  border: `1px solid ${
+                    variant === "warning"
+                      ? "rgba(245,158,11,0.2)"
+                      : variant === "success"
+                        ? "rgba(34,197,94,0.22)"
+                        : "rgba(255,255,255,0.08)"
+                  }`,
                   borderRadius: 16, padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", gap: 14,
                 }}>
-                  <div style={{ background: i === 1 ? "rgba(245,158,11,0.12)" : "rgba(194,65,12,0.15)", borderRadius: 10, padding: 10 }}>
-                    <Icon size={20} color={i === 1 ? "#f59e0b" : "var(--primary)"} />
+                  <div style={{
+                    background:
+                      variant === "warning"
+                        ? "rgba(245,158,11,0.12)"
+                        : variant === "success"
+                          ? "rgba(34,197,94,0.14)"
+                          : "rgba(194,65,12,0.15)",
+                    borderRadius: 10, padding: 10,
+                  }}>
+                    <Icon
+                      size={20}
+                      color={variant === "warning" ? "#f59e0b" : variant === "success" ? "#4ade80" : "var(--primary)"}
+                    />
                   </div>
                   <div>
-                    <div style={{ fontSize: 24, fontWeight: 700 }}>{value}</div>
+                    <div style={{ fontSize: 24, fontWeight: 700, letterSpacing: variant === "success" ? "-0.02em" : undefined }}>{value}</div>
                     <div style={{ fontSize: 12, color: "#64748b" }}>{label}</div>
                   </div>
                 </div>
               ))}
             </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {pending.length > 0 && (
               <div style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -337,6 +532,16 @@ export default function AdminDashboard() {
                 <button onClick={() => setActiveSection("pendientes")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ver ahora</button>
               </div>
             )}
+            {pendingPayments.length > 0 && (
+              <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.22)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <CreditCard size={18} color="#818cf8" />
+                  <span style={{ fontSize: 14, color: "#a5b4fc", fontWeight: 600 }}>{pendingPayments.length} pago{pendingPayments.length > 1 ? "s" : ""} de cuota esperando revisión</span>
+                </div>
+                <button onClick={() => setActiveSection("pagos")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.35)", color: "#c7d2fe", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ver ahora</button>
+              </div>
+            )}
+            </div>
           </>
         )}
 
@@ -408,6 +613,20 @@ export default function AdminDashboard() {
         {/* PAGOS section */}
         {activeSection === "pagos" && (
           <>
+            <div
+              style={{
+                marginBottom: 20,
+                padding: "14px 18px",
+                borderRadius: 12,
+                background: "rgba(99,102,241,0.08)",
+                border: "1px solid rgba(99,102,241,0.22)",
+                color: "#c7d2fe",
+                fontSize: 13,
+                lineHeight: 1.55,
+              }}
+            >
+              <strong style={{ color: "#e0e7ff" }}>Importante:</strong> un estudiante puede marcar que pagó 3 meses y solo transferir 140 Bs. Por eso cada mes aparece aparte: solo pulsa Aprobar en el mes que el comprobante respalde (140 Bs por mes aprobado).
+            </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
               <button onClick={fetchPayments} title="Recargar" style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}>
                 <RefreshCw size={16} className={paymentsLoading ? "animate-spin" : ""} />
@@ -434,7 +653,12 @@ export default function AdminDashboard() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {payments.map((p) => (
+                {payments.map((p) => {
+                  const receiptHref = comprobantePublicUrl(p.registrationReceipt);
+                  const raw = (p.registrationReceipt ?? "").toLowerCase();
+                  const showPdf = raw.endsWith(".pdf") || raw.startsWith("data:application/pdf");
+                  const studentLabel = p.userName || p.userEmail || "Estudiante";
+                  return (
                   <div key={p.id} style={{
                     background: "rgba(255,255,255,0.02)",
                     border: `1px solid ${p.status === "aprobado" ? "rgba(34,197,94,0.2)" : p.status === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.15)"}`,
@@ -453,12 +677,39 @@ export default function AdminDashboard() {
                       <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.userEmail}</div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
-                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Cuota</span>
+                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Mes</span>
                       <span style={{ fontSize: 20, fontWeight: 800, color: "#818cf8" }}>{p.cuota}</span>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
-                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Monto</span>
-                      <span style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.monto} Bs</span>
+                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Monto</span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.monto} Bs</span>
+                      </div>
+                      {receiptHref ? (
+                        <button
+                          type="button"
+                          title="Ver comprobante"
+                          onClick={() =>
+                            setReceiptModal({
+                              url: receiptHref,
+                              isPdf: showPdf,
+                              studentLabel,
+                            })
+                          }
+                          style={{
+                            display: "flex", alignItems: "center", gap: 6,
+                            padding: "8px 12px", borderRadius: 10,
+                            background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.35)",
+                            color: "#a5b4fc", fontSize: 12, fontWeight: 700,
+                            cursor: "pointer", flexShrink: 0, transition: "all 0.2s",
+                          }}
+                        >
+                          <FileImage size={16} />
+                          <span>Comprobante</span>
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "#475569", width: 72, textAlign: "center" }} title="Sin comprobante registrado">—</span>
+                      )}
                     </div>
                     <div style={{ flexShrink: 0 }}>
                       <span style={{
@@ -517,7 +768,8 @@ export default function AdminDashboard() {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
@@ -712,6 +964,118 @@ export default function AdminDashboard() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {receiptModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="receipt-modal-title"
+          onClick={() => setReceiptModal(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.72)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 60,
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#111115",
+              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 16,
+              width: "100%",
+              maxWidth: 920,
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.55)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                padding: "14px 18px",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                flexShrink: 0,
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <h2 id="receipt-modal-title" style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>
+                  Comprobante de pago
+                </h2>
+                <p style={{ fontSize: 13, color: "#94a3b8", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {receiptModal.studentLabel}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReceiptModal(null)}
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10,
+                  padding: 8,
+                  cursor: "pointer",
+                  color: "#94a3b8",
+                  display: "flex",
+                  flexShrink: 0,
+                }}
+                aria-label="Cerrar"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", padding: 16, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 200 }}>
+              {receiptModal.isPdf ? (
+                <iframe
+                  title="Comprobante PDF"
+                  src={receiptModal.url}
+                  style={{
+                    width: "100%",
+                    minHeight: "70vh",
+                    border: "none",
+                    borderRadius: 8,
+                    background: "#1e293b",
+                  }}
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={receiptModal.url}
+                  alt="Comprobante de pago"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "75vh",
+                    objectFit: "contain",
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                />
+              )}
+            </div>
+            <div style={{ padding: "12px 18px", borderTop: "1px solid rgba(255,255,255,0.08)", flexShrink: 0 }}>
+              <a
+                href={receiptModal.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#a5b4fc", fontSize: 13, fontWeight: 600 }}
+              >
+                Abrir en nueva pestaña
+              </a>
+            </div>
           </div>
         </div>
       )}

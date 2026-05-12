@@ -48,12 +48,31 @@ export async function initDb() {
   const migrations = [
     "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'pendiente'",
     "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''",
+    "ALTER TABLE users ADD COLUMN registration_receipt TEXT",
   ];
   for (const sql of migrations) {
     try { await db.execute(sql); } catch { /* column already exists */ }
   }
 
   usersInitialized = true;
+}
+
+/** Registra cuotas en revisión al inscribirse (140 Bs por mes). El admin aprueba cada cuota por separado. */
+export async function insertEnrollmentPendingPayments(
+  userId: string,
+  months: 1 | 2 | 3
+): Promise<void> {
+  for (let c = 1; c <= months; c++) {
+    const exists = await db.execute({
+      sql: `SELECT id FROM payments WHERE user_id = ? AND cuota = ?`,
+      args: [userId, c],
+    });
+    if (exists.rows.length > 0) continue;
+    await db.execute({
+      sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, 140, 'pendiente')`,
+      args: [userId, c],
+    });
+  }
 }
 
 /**

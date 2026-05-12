@@ -16,7 +16,8 @@ export async function GET() {
         p.created_at,
         u.name AS user_name,
         u.email AS user_email,
-        u.image AS user_image
+        u.image AS user_image,
+        u.registration_receipt AS registration_receipt
       FROM payments p
       LEFT JOIN users u ON u.id = p.user_id
       ORDER BY p.created_at DESC
@@ -32,6 +33,7 @@ export async function GET() {
       userName: r.user_name ? String(r.user_name) : null,
       userEmail: r.user_email ? String(r.user_email) : null,
       userImage: r.user_image ? String(r.user_image) : null,
+      registrationReceipt: r.registration_receipt != null ? String(r.registration_receipt) : null,
     }));
 
     return NextResponse.json(payments);

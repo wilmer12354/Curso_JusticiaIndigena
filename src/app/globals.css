@@ -506,6 +506,62 @@ p {
   line-height: 1.5 !important;
 }
 
+.register-plan-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+@media (min-width: 640px) {
+  .register-plan-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.register-plan-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.4);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+}
+.register-plan-option:hover:not(:disabled) {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(15, 23, 42, 0.65);
+}
+.register-plan-option:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.register-plan-option-active {
+  border-color: rgba(245, 158, 11, 0.75);
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2);
+}
+.register-plan-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+.register-plan-price {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f59e0b;
+  letter-spacing: -0.02em;
+}
+.register-plan-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 0.35rem;
+  line-height: 1.35;
+}
+
 /* Google section */
 .register-google-desc {
   font-size: 0.9rem !important;
@@ -552,6 +608,38 @@ p {
 .register-google-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.register-receipt-label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  background: rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.register-receipt-label:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(15, 23, 42, 0.55);
+}
+.register-receipt-label-text {
+  flex: 1;
+  min-width: 0;
+}
+.register-receipt-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Spinner */

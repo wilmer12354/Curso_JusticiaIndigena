@@ -26,6 +26,7 @@ type TopicProgress = {
   attempts: number;
   passed: boolean;
   completedAt: string | null;
+  blocked?: boolean;
 };
 
 type ExamResult = {
@@ -58,6 +59,12 @@ export default function TopicDetailPage() {
   const [examResult, setExamResult] = useState<ExamResult | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [needsPayment, setNeedsPayment] = useState(false);
+  const [showQr, setShowQr] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptError, setReceiptError] = useState("");
+  const [paymentNotice, setPaymentNotice] = useState("");
+  const [paymentRequesting, setPaymentRequesting] = useState(false);
+  const [paymentRequested, setPaymentRequested] = useState(false);
   const answeredCount = examQuestions.filter((question) => selectedAnswers[question.id]).length;
   const isExamComplete = examQuestions.length > 0 && answeredCount === examQuestions.length;
 
@@ -152,6 +159,70 @@ export default function TopicDetailPage() {
     setShowExam(true);
   };
 
+  const getPaymentCuotaForTopic = (order: number) => {
+    if (order <= 8) return 1;
+    if (order <= 16) return 2;
+    return 3;
+  };
+
+  const paymentCuota = getPaymentCuotaForTopic(Number(params.topicOrder));
+  const paymentAmount = 140;
+  const isNotifyEnabled = showQr && Boolean(receiptFile) && !paymentRequested;
+
+  const handleReceiptChange = (event: any) => {
+    setReceiptError("");
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      setReceiptFile(null);
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      setReceiptError("Tipo de archivo no válido. Usa JPG, PNG, WebP o PDF.");
+      setReceiptFile(null);
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setReceiptError("El comprobante supera 3 MB.");
+      setReceiptFile(null);
+      return;
+    }
+    setReceiptFile(file);
+  };
+
+  const handleNotifyPayment = async () => {
+    if (!student) return;
+    if (!isNotifyEnabled) return;
+
+    setPaymentRequesting(true);
+    setPaymentNotice("");
+
+    try {
+      const response = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: student.id, cuota: paymentCuota }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setPaymentNotice(data.error ?? "No se pudo notificar el pago.");
+      } else {
+        setPaymentNotice(data.message ?? "Pago notificado. El administrador revisará tu comprobante.");
+        setPaymentRequested(true);
+      }
+    } catch {
+      setPaymentNotice("Error de red. Intenta de nuevo más tarde.");
+    } finally {
+      setPaymentRequesting(false);
+    }
+  };
+
+  const handleViewQr = () => {
+    setShowQr(true);
+  };
+
+  const isTopicPaymentBlocked = needsPayment;
+
   const handleSubmitExam = async () => {
     if (!student || !topic) {
       return;
@@ -193,6 +264,7 @@ export default function TopicDetailPage() {
         return;
       }
 
+      const isBlocked = Boolean(data.blocked);
       setExamResult({
         score: Number(data.score ?? 0),
         passed: Boolean(data.passed),
@@ -205,11 +277,8 @@ export default function TopicDetailPage() {
         attempts: (prev?.attempts ?? 0) + 1,
         passed: Boolean(data.passed || prev?.passed),
         completedAt: data.passed ? new Date().toISOString() : prev?.completedAt ?? null,
+        blocked: isBlocked,
       }));
-
-      // if (data.passed) {
-      //   Modal handle the redirect now
-      // }
     } catch {
       setSubmitError("Error de red al enviar el examen.");
     } finally {
@@ -255,11 +324,71 @@ export default function TopicDetailPage() {
                 <CreditCard size={26} color="#818cf8" />
               </div>
               <h1 className="text-3xl font-bold mb-3">Pago requerido</h1>
-              <p className="text-slate-400 mb-6">
-                Para acceder al <strong className="text-white">Tema {params.topicOrder}</strong> debes pagar la siguiente cuota (140 Bs).
-                Envía el comprobante al número <strong className="text-white">71539769</strong> y notifica al administrador desde la página de cursos.
+              <p className="text-slate-400 mb-4">
+                Para acceder al <strong className="text-white">Tema {params.topicOrder}</strong> debes pagar la cuota <strong className="text-white">{paymentCuota}</strong> (140 Bs).
               </p>
-              <Link href="/courses" className="btn btn-primary inline-flex items-center gap-2">
+              <p className="text-slate-400 mb-6">
+                Primero revisa el QR de pago y sube el comprobante. Luego podrás notificar el pago al administrador.
+              </p>
+
+              <div className="grid gap-3 md:grid-cols-3 mb-6">
+                <button
+                  type="button"
+                  onClick={handleViewQr}
+                  className="btn btn-secondary w-full"
+                >
+                  Ver QR
+                </button>
+
+                <label className="btn btn-secondary w-full cursor-pointer justify-center">
+                  Subir comprobante
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    onChange={handleReceiptChange}
+                    className="hidden"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleNotifyPayment}
+                  disabled={!isNotifyEnabled || paymentRequesting}
+                  className={`btn btn-primary w-full ${(!isNotifyEnabled || paymentRequesting) ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {paymentRequesting ? "Notificando..." : paymentRequested ? "Notificado" : "Notificar pago"}
+                </button>
+              </div>
+
+              {receiptFile && (
+                <p className="text-slate-300 mb-2">Archivo seleccionado: {receiptFile.name}</p>
+              )}
+              {receiptError && (
+                <p className="text-sm text-red-400 mb-2">{receiptError}</p>
+              )}
+              {paymentNotice && (
+                <p className="text-sm text-slate-300 mb-4">{paymentNotice}</p>
+              )}
+
+              {showQr && (
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5 mb-6">
+                  <p className="text-sm uppercase tracking-wide text-slate-400 mb-3">Código QR de pago</p>
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
+                      <img src="/qr_pago.png" alt="Código QR para pago" className="h-48 w-48 object-contain" />
+                    </div>
+                    <p className="text-slate-300 text-sm text-center max-w-lg">
+                      Escanea el código QR para pagar con Tigo Money, QR Simple o transferencia bancaria. El monto por cuota es <strong className="text-white">Bs. {paymentAmount}</strong>.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-sm text-slate-500">
+                También puedes enviar tu comprobante por WhatsApp al <strong className="text-white">71539769</strong> si lo prefieres.
+              </p>
+
+              <Link href="/courses" className="btn btn-primary inline-flex items-center gap-2 mt-4">
                 <ArrowLeft className="w-4 h-4" />
                 Ir a mis cursos
               </Link>
@@ -374,7 +503,21 @@ export default function TopicDetailPage() {
               <h2 className="text-2xl font-bold">Examen del tema</h2>
             </div>
 
-            {!showExam ? (
+            {progress?.blocked ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center">
+                  <XCircle className="mx-auto h-10 w-10 text-red-400 mb-2" />
+                  <p className="font-semibold text-red-300">Has reprobado este tema 3 veces</p>
+                  <p className="text-sm text-red-400/80 mt-1">
+                    Escribe al administrador para que desbloquee tu acceso.
+                  </p>
+                </div>
+                <Link href="/courses" className="btn btn-primary w-full inline-flex items-center justify-center gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Volver a mis cursos
+                </Link>
+              </div>
+            ) : !showExam ? (
               <div className="space-y-4">
                 <p className="text-slate-400">
                   Cuando te sientas preparado, inicia el examen para responder las preguntas de este tema.
@@ -538,6 +681,18 @@ export default function TopicDetailPage() {
                   >
                     Vamos al siguiente tema
                   </button>
+                ) : progress?.blocked ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-red-400 text-center">
+                      Has agotado tus 3 intentos. Escribe al administrador para desbloquear este tema.
+                    </p>
+                    <button
+                      onClick={() => router.push("/courses")}
+                      className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3"
+                    >
+                      Volver a cursos
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => startExam(examQuestions.map((q) => q.id))}

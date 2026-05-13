@@ -45,6 +45,7 @@ export async function initDb() {
       cuota INTEGER NOT NULL,
       monto INTEGER NOT NULL DEFAULT 140,
       status TEXT DEFAULT 'pendiente',
+      payment_receipt TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -59,6 +60,8 @@ export async function initDb() {
     "ALTER TABLE users ADD COLUMN education_level TEXT DEFAULT ''",
     "ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''",
     "ALTER TABLE users ADD COLUMN certificate_photo TEXT DEFAULT ''",
+    "ALTER TABLE payments ADD COLUMN payment_receipt TEXT",
+    "ALTER TABLE progress ADD COLUMN blocked INTEGER DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { await db.execute(sql); } catch { /* column already exists */ }

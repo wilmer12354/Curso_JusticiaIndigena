@@ -1,4 +1,4 @@
-import { mkdir, writeFile, unlink } from "fs/promises";
+import { put, del } from "@vercel/blob";
 import path from "path";
 
 const MAX_BYTES = 3 * 1024 * 1024;
@@ -29,7 +29,7 @@ export function receiptFileBaseFromName(fullName: string, userId: string): strin
   return `${base}_${userId.slice(0, 8)}`;
 }
 
-/** Guarda el archivo en public/comprobantes y devuelve ruta tipo public/comprobantes/Nombre.ext */
+/** Guarda el archivo en Vercel Blob y devuelve la URL */
 export async function saveRegistrationReceipt(
   file: File,
   displayName: string,
@@ -44,15 +44,33 @@ export async function saveRegistrationReceipt(
     throw new Error("RECEIPT_TOO_LARGE");
   }
   const base = receiptFileBaseFromName(displayName || "Estudiante", userId);
-  const filename = `${base}${ext}`;
-  const dir = path.join(process.cwd(), "public", "comprobantes");
-  await mkdir(dir, { recursive: true });
-  const absFile = path.join(dir, filename);
-  await writeFile(absFile, Buffer.from(await file.arrayBuffer()));
-  return `public/comprobantes/${filename}`;
+  const filename = `comprobantes/${base}${ext}`;
+  const blob = await put(filename, file, { access: 'public' });
+  return blob.url;
 }
 
-/** Guarda la foto del certificado en public/fotos_certificados y devuelve la ruta */
+export async function savePaymentReceipt(
+  file: File,
+  displayName: string,
+  userId: string,
+  cuota: number
+): Promise<string> {
+  const mime = file.type;
+  const ext = MIME_TO_EXT[mime];
+  if (!ext) {
+    throw new Error("INVALID_RECEIPT_TYPE");
+  }
+  if (file.size > MAX_BYTES) {
+    throw new Error("RECEIPT_TOO_LARGE");
+  }
+  const base = receiptFileBaseFromName(displayName || "Estudiante", userId);
+  const suffix = cuota > 0 ? `cuota${cuota}` : "full";
+  const filename = `comprobantes/${base}_${suffix}${ext}`;
+  const blob = await put(filename, file, { access: 'public' });
+  return blob.url;
+}
+
+/** Guarda la foto del certificado en Vercel Blob y devuelve la URL */
 export async function saveCertificatePhoto(
   file: File,
   displayName: string,
@@ -67,18 +85,15 @@ export async function saveCertificatePhoto(
     throw new Error("PHOTO_TOO_LARGE");
   }
   const base = receiptFileBaseFromName(displayName || "Estudiante", userId);
-  const filename = `${base}${ext}`;
-  const dir = path.join(process.cwd(), "public", "fotos_certificados");
-  await mkdir(dir, { recursive: true });
-  const absFile = path.join(dir, filename);
-  await writeFile(absFile, Buffer.from(await file.arrayBuffer()));
-  return `public/fotos_certificados/${filename}`;
+  const filename = `fotos_certificados/${base}${ext}`;
+  const blob = await put(filename, file, { access: 'public' });
+  return blob.url;
 }
 
 export async function deletePublicComprobanteIfExists(storedPath: string | null | undefined): Promise<void> {
-  if (!storedPath || !storedPath.startsWith("public/comprobantes/")) return;
-  const base = path.basename(storedPath);
-  if (!base || base.includes("..") || base.includes("/") || base.includes("\\")) return;
-  const abs = path.join(process.cwd(), "public", "comprobantes", base);
-  await unlink(abs).catch(() => {});
+  if (!storedPath) return;
+  if (storedPath.startsWith("https://")) {
+    await del(storedPath).catch(() => {});
+  }
+  // For old local paths, can't delete on Vercel, so skip
 }

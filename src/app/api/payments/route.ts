@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, initDb, getPaymentMaxTopic } from "@/lib/db";
+import { savePaymentReceipt } from "@/lib/comprobantes";
 
 // GET /api/payments?userId=...  → all payments for a user
 export async function GET(request: NextRequest) {
@@ -38,9 +39,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await initDb();
-    const body = await request.json();
-    const userId = String(body.userId ?? "");
-    const cuota = Number(body.cuota);
+
+    const contentType = request.headers.get("content-type") || "";
+    let userId = "";
+    let cuota = 0;
+    let receiptFile: File | null = null;
+
+    if (contentType.includes("multipart/form-data")) {
+      const form = await request.formData();
+      userId = String(form.get("userId") ?? "");
+      cuota = Number(form.get("cuota"));
+      const receipt = form.get("receipt");
+      receiptFile = receipt instanceof File && receipt.size > 0 ? receipt : null;
+    } else {
+      const body = await request.json();
+      userId = String(body.userId ?? "");
+      cuota = Number(body.cuota);
+      receiptFile = null;
+    }
 
     if (!userId) {
       return NextResponse.json({ error: "userId es requerido" }, { status: 400 });
@@ -50,25 +66,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cuota inválida (debe ser 1, 2, 3 o 0 para pago completo)" }, { status: 400 });
     }
 
-    if (cuota === 0) {
-      // Full payment: insert cuota 1, 2, 3 as pending (each 140)
-      for (const c of [1, 2, 3]) {
-        // Check if already exists
-        const exists = await db.execute({
-          sql: `SELECT id FROM payments WHERE user_id = ? AND cuota = ?`,
-          args: [userId, c],
-        });
-        if (exists.rows.length === 0) {
-          await db.execute({
-            sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, 140, 'pendiente')`,
-            args: [userId, c],
-          });
-        }
-      }
-      return NextResponse.json({ success: true, message: "Solicitud de pago completo registrada (3 cuotas pendientes)" });
+    if (!receiptFile) {
+      return NextResponse.json({ error: "Debes adjuntar el comprobante de pago." }, { status: 400 });
     }
 
-    // Single cuota — check not already pending or approved
+    const userResult = await db.execute({
+      sql: `SELECT name FROM users WHERE id = ? LIMIT 1`,
+      args: [userId],
+    });
+    const userName = userResult.rows.length > 0 ? String(userResult.rows[0].name || "Estudiante") : "Estudiante";
+
+    const receiptUrl = await savePaymentReceipt(receiptFile, userName, userId, cuota === 0 ? 0 : cuota);
+
+    const createOrUpdatePayment = async (cuotaNumber: number) => {
+      const existing = await db.execute({
+        sql: `SELECT id, status FROM payments WHERE user_id = ? AND cuota = ?`,
+        args: [userId, cuotaNumber],
+      });
+
+      if (existing.rows.length > 0) {
+        const existingStatus = String(existing.rows[0].status);
+        if (existingStatus === "aprobado") {
+          return { skipped: true };
+        }
+        await db.execute({
+          sql: `UPDATE payments SET status = 'pendiente', payment_receipt = ?, created_at = CURRENT_TIMESTAMP WHERE user_id = ? AND cuota = ?`,
+          args: [receiptUrl, userId, cuotaNumber],
+        });
+        return { skipped: false };
+      }
+
+      await db.execute({
+        sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, 140, 'pendiente', ?)`,
+        args: [userId, cuotaNumber, receiptUrl],
+      });
+      return { skipped: false };
+    };
+
+    if (cuota === 0) {
+      const cuotasToCreate = [1, 2, 3];
+      let insertedCount = 0;
+      for (const cuotaNumber of cuotasToCreate) {
+        const result = await createOrUpdatePayment(cuotaNumber);
+        if (!result.skipped) insertedCount++;
+      }
+      return NextResponse.json({ success: true, message: `Solicitud de pago completo registrada (${insertedCount} cuotas pendientes).` });
+    }
+
     const existing = await db.execute({
       sql: `SELECT id, status FROM payments WHERE user_id = ? AND cuota = ?`,
       args: [userId, cuota],
@@ -79,20 +123,16 @@ export async function POST(request: NextRequest) {
       if (existingStatus === "aprobado") {
         return NextResponse.json({ error: "Esta cuota ya fue aprobada." }, { status: 409 });
       }
-      if (existingStatus === "pendiente") {
-        return NextResponse.json({ error: "Esta cuota ya está en revisión por el administrador." }, { status: 409 });
-      }
-      // Rejected → allow re-request by updating
       await db.execute({
-        sql: `UPDATE payments SET status = 'pendiente', created_at = CURRENT_TIMESTAMP WHERE user_id = ? AND cuota = ?`,
-        args: [userId, cuota],
+        sql: `UPDATE payments SET status = 'pendiente', payment_receipt = ?, created_at = CURRENT_TIMESTAMP WHERE user_id = ? AND cuota = ?`,
+        args: [receiptUrl, userId, cuota],
       });
-      return NextResponse.json({ success: true, message: "Solicitud de pago reenviada." });
+      return NextResponse.json({ success: true, message: "Solicitud de pago reenviada con el nuevo comprobante." });
     }
 
     await db.execute({
-      sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, 140, 'pendiente')`,
-      args: [userId, cuota],
+      sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, 140, 'pendiente', ?)`,
+      args: [userId, cuota, receiptUrl],
     });
 
     return NextResponse.json({ success: true, message: "Solicitud de pago registrada. El administrador la revisará pronto." });

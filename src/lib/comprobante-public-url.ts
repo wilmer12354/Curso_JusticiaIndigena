@@ -2,6 +2,7 @@
 export function comprobantePublicUrl(stored: string | null | undefined): string | null {
   if (!stored) return null;
   if (stored.startsWith("data:")) return stored;
+  if (stored.startsWith("https://")) return stored;
   if (stored.startsWith("public/")) {
     return `/${stored.slice("public/".length)}`;
   }

@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const progressResult = await db.execute({
       sql: `
-        SELECT topic_order, score, attempts, passed, completed_at
+        SELECT topic_order, score, attempts, passed, completed_at, blocked
         FROM progress
         WHERE user_id = ?
       `,
@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
         score: progress ? Number(progress.score ?? 0) : 0,
         attempts: progress ? Number(progress.attempts ?? 0) : 0,
         passed: progress ? Number(progress.passed ?? 0) === 1 : false,
+        blocked: progress ? Number(progress.blocked ?? 0) === 1 : false,
         completedAt: progress?.completed_at ? String(progress.completed_at) : null,
         lessons: index + 1,
       };

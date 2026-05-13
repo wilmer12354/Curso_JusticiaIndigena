@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon, FileImage, Bell, Banknote } from "lucide-react";
+import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon, FileImage, Bell, Banknote, Lock, Unlock } from "lucide-react";
 import { comprobantePublicUrl } from "@/lib/comprobante-public-url";
 import { LogoutButton } from "../components/LogoutButton";
 
@@ -33,7 +33,17 @@ type Payment = {
   userName: string | null;
   userEmail: string | null;
   userImage: string | null;
+  paymentReceipt: string | null;
   registrationReceipt: string | null;
+};
+
+type BlockedTopic = {
+  userId: string;
+  topicOrder: number;
+  attempts: number;
+  userName: string;
+  userEmail: string;
+  topicTitle: string;
 };
 
 type ModalMode = "create" | "edit" | "delete" | null;
@@ -49,11 +59,14 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [activeSection, setActiveSection] = useState<"dashboard" | "users" | "pendientes" | "pagos">("dashboard");
+  const [activeSection, setActiveSection] = useState<"dashboard" | "users" | "pendientes" | "pagos" | "bloqueados">("dashboard");
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [processingPayment, setProcessingPayment] = useState<number | null>(null);
   const [activating, setActivating] = useState<string | null>(null);
+  const [blockedTopics, setBlockedTopics] = useState<BlockedTopic[]>([]);
+  const [blockedLoading, setBlockedLoading] = useState(false);
+  const [unblocking, setUnblocking] = useState<string | null>(null);
   const [receiptModal, setReceiptModal] = useState<{
     url: string;
     isPdf: boolean;
@@ -138,6 +151,30 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchBlocked = useCallback(async () => {
+    setBlockedLoading(true);
+    try {
+      const res = await fetch("/api/admin/blocked");
+      if (res.ok) setBlockedTopics(await res.json());
+    } catch { /* ignore */ }
+    setBlockedLoading(false);
+  }, []);
+
+  const handleUnblock = async (userId: string, topicOrder: number) => {
+    const key = `${userId}-${topicOrder}`;
+    setUnblocking(key);
+    try {
+      await fetch("/api/admin/unblock-topic", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, topicOrder }),
+      });
+      fetchBlocked();
+    } finally {
+      setUnblocking(null);
+    }
+  };
+
   useEffect(() => {
     if (loading) return;
     void Promise.all([fetchUsers(), fetchPayments()]);
@@ -147,7 +184,8 @@ export default function AdminDashboard() {
     if (loading) return;
     if (activeSection === "users" || activeSection === "pendientes") fetchUsers();
     else if (activeSection === "pagos") fetchPayments();
-  }, [loading, activeSection, fetchUsers, fetchPayments]);
+    else if (activeSection === "bloqueados") fetchBlocked();
+  }, [loading, activeSection, fetchUsers, fetchPayments, fetchBlocked]);
 
   useEffect(() => {
     setNotifOpen(false);
@@ -289,6 +327,7 @@ export default function AdminDashboard() {
             { id: "users", label: "Estudiantes", Icon: Users },
             { id: "pendientes", label: "Pendientes", Icon: Clock },
             { id: "pagos", label: "Pagos", Icon: CreditCard },
+            { id: "bloqueados", label: "Bloqueados", Icon: Lock },
           ].map(({ id, label, Icon }) => (
             <button
               key={id}
@@ -296,12 +335,12 @@ export default function AdminDashboard() {
               style={{
                 display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
                 borderRadius: 12, border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 500,
-                background: activeSection === id
-                  ? (id === "pendientes" ? "rgba(245,158,11,0.12)" : id === "pagos" ? "rgba(99,102,241,0.15)" : "rgba(194,65,12,0.15)")
-                  : "transparent",
-                color: activeSection === id
-                  ? (id === "pendientes" ? "#f59e0b" : id === "pagos" ? "#818cf8" : "var(--primary)")
-                  : "#94a3b8",
+                  background: activeSection === id
+                    ? (id === "pendientes" ? "rgba(245,158,11,0.12)" : id === "pagos" ? "rgba(99,102,241,0.15)" : id === "bloqueados" ? "rgba(248,113,113,0.12)" : "rgba(194,65,12,0.15)")
+                    : "transparent",
+                  color: activeSection === id
+                    ? (id === "pendientes" ? "#f59e0b" : id === "pagos" ? "#818cf8" : id === "bloqueados" ? "#f87171" : "var(--primary)")
+                    : "#94a3b8",
                 transition: "all 0.2s",
                 position: "relative",
                 whiteSpace: "nowrap",
@@ -323,6 +362,13 @@ export default function AdminDashboard() {
                   padding: "1px 7px", lineHeight: 1.6,
                 }}>{pendingPayments.length}</span>
               )}
+              {id === "bloqueados" && blockedTopics.length > 0 && (
+                <span style={{
+                  marginLeft: "auto", background: "#f87171", color: "#fff",
+                  fontSize: 11, fontWeight: 800, borderRadius: 999,
+                  padding: "1px 7px", lineHeight: 1.6,
+                }}>{blockedTopics.length}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -337,7 +383,7 @@ export default function AdminDashboard() {
         <header style={{ marginBottom: 32, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff,#94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
-              {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : "Gestión de Estudiantes"}
+              {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : activeSection === "bloqueados" ? "Temas Bloqueados" : "Gestión de Estudiantes"}
             </h1>
             <p style={{ color: "#64748b", fontSize: 14 }}>
               {activeSection === "dashboard"
@@ -346,7 +392,9 @@ export default function AdminDashboard() {
                   ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (140 Bs) solo si el comprobante coincide con ese mes."
                   : activeSection === "pagos"
                     ? "Cada fila es un mes (140 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
-                    : "Visualiza, crea, edita y elimina estudiantes."}
+                    : activeSection === "bloqueados"
+                      ? "Estudiantes que agotaron sus 3 intentos en un tema. Desbloquéalos para que puedan reintentar."
+                      : "Visualiza, crea, edita y elimina estudiantes."}
             </p>
           </div>
           <div style={{ position: "relative", flexShrink: 0 }}>
@@ -659,8 +707,8 @@ export default function AdminDashboard() {
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {payments.map((p) => {
-                  const receiptHref = comprobantePublicUrl(p.registrationReceipt);
-                  const raw = (p.registrationReceipt ?? "").toLowerCase();
+                  const receiptHref = comprobantePublicUrl(p.paymentReceipt ?? p.registrationReceipt);
+                  const raw = (p.paymentReceipt ?? p.registrationReceipt ?? "").toLowerCase();
                   const showPdf = raw.endsWith(".pdf") || raw.startsWith("data:application/pdf");
                   const studentLabel = p.userName || p.userEmail || "Estudiante";
                   return (
@@ -772,6 +820,75 @@ export default function AdminDashboard() {
                             : <ThumbsDown size={18} color="#f87171" />}
                         </div>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeSection === "bloqueados" && (
+          <>
+            <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
+              <button onClick={fetchBlocked} title="Recargar" style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}>
+                <RefreshCw size={16} className={blockedLoading ? "animate-spin" : ""} />
+              </button>
+            </div>
+            {blockedLoading ? (
+              <div style={{ textAlign: "center", padding: 48, color: "#64748b" }}>Cargando...</div>
+            ) : blockedTopics.length === 0 ? (
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: "4rem", textAlign: "center" }}>
+                <CheckCircle2 size={48} color="#22c55e" style={{ margin: "0 auto 1rem" }} />
+                <p style={{ color: "#64748b", fontSize: 14 }}>No hay temas bloqueados por 3 intentos fallidos.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {blockedTopics.map((bt) => {
+                  const key = `${bt.userId}-${bt.topicOrder}`;
+                  return (
+                    <div key={key} style={{
+                      background: "rgba(255,255,255,0.02)", border: "1px solid rgba(248,113,113,0.15)",
+                      borderRadius: 14, padding: "1.25rem 1.5rem",
+                      display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
+                    }}>
+                      <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(248,113,113,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <Lock size={20} color="#f87171" />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: "#f1f5f9", marginBottom: 2 }}>{bt.userName || "—"}</div>
+                        <div style={{ fontSize: 13, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{bt.userEmail}</div>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Tema</span>
+                        <span style={{ fontSize: 20, fontWeight: 800, color: "#f87171" }}>{bt.topicOrder}</span>
+                      </div>
+                      <div style={{ fontSize: 13, color: "#94a3b8", flexShrink: 0, textAlign: "center" }}>
+                        <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", marginBottom: 2 }}>Intentos</div>
+                        {bt.attempts}
+                      </div>
+                      <div style={{ fontSize: 13, color: "#94a3b8", flexShrink: 0, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase", marginBottom: 2 }}>Título</div>
+                        {bt.topicTitle}
+                      </div>
+                      <button
+                        onClick={() => handleUnblock(bt.userId, bt.topicOrder)}
+                        disabled={unblocking === key}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 8,
+                          padding: "8px 18px", borderRadius: 10,
+                          background: unblocking === key ? "rgba(34,197,94,0.1)" : "rgba(34,197,94,0.15)",
+                          border: "1px solid rgba(34,197,94,0.3)",
+                          color: "#4ade80", fontSize: 13, fontWeight: 700,
+                          cursor: unblocking === key ? "not-allowed" : "pointer",
+                          opacity: unblocking === key ? 0.6 : 1,
+                          whiteSpace: "nowrap", flexShrink: 0,
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <Unlock size={15} />
+                        {unblocking === key ? "Desbloqueando..." : "Desbloquear"}
+                      </button>
                     </div>
                   );
                 })}

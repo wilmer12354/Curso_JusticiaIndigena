@@ -100,6 +100,7 @@ export function AuthButtons() {
           <LogIn className="w-10 h-10" />
           {loadingSignIn ? "Verificando..." : "Iniciar Sesión"}
         </button>
+
       </div>
     </div>
   );

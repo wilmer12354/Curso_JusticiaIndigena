@@ -84,7 +84,7 @@ export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen overflow-x-hidden">
       {/* Hero Section */}
-      <main className="relative min-h-screen flex flex-col justify-center items-center text-center px-4 after:absolute after:bottom-0 after:left-0 after:w-full after:h-40 after:bg-gradient-to-b after:from-transparent after:to-background after:z-10">
+      <main className="relative min-h-screen flex flex-col justify-center items-center text-center px-4 pb-24 md:pb-0 after:absolute after:bottom-0 after:left-0 after:w-full after:h-40 after:bg-gradient-to-b after:from-transparent after:to-background after:z-10">
         <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center opacity-20"
@@ -114,8 +114,9 @@ export default function LandingPage() {
 
         <AuthButtons />
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-10 z-20 animate-bounce cursor-pointer text-slate-500 hover:text-white transition-colors flex flex-col items-center gap-2"
+        {/* Scroll Indicator — flujo normal en móvil, absoluto en md+ */}
+        <div
+          className="mt-10 z-20 md:absolute md:bottom-10 md:mt-0 animate-bounce cursor-pointer text-slate-500 hover:text-white transition-colors flex flex-col items-center gap-2"
           onClick={() => {
             document.getElementById('sobre-nosotros')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }}>

@@ -25,6 +25,7 @@ type Topic = {
   score: number;
   attempts: number;
   passed: boolean;
+  blocked: boolean;
   completedAt: string | null;
 };
 
@@ -53,6 +54,11 @@ export default function CoursesPage() {
   const [paymentMaxTopic, setPaymentMaxTopic] = useState<number>(0);
   const [requestingCuota, setRequestingCuota] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
+  const [showQr, setShowQr] = useState(false);
+  const [hasViewedQr, setHasViewedQr] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<"next" | "full">("next");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptError, setReceiptError] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -107,15 +113,20 @@ export default function CoursesPage() {
   }, [router]);
 
   const handleRequestPayment = async (cuota: number) => {
-    if (!user) return;
+    if (!user || !receiptFile) return;
     setRequestingCuota(true);
     setPaymentMessage("");
     try {
+      const formData = new FormData();
+      formData.append("userId", user.id);
+      formData.append("cuota", String(cuota));
+      formData.append("receipt", receiptFile);
+
       const res = await fetch("/api/payments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id, cuota }),
+        body: formData,
       });
+
       const data = await res.json();
       if (res.ok) {
         setPaymentMessage(data.message ?? "Solicitud enviada. El administrador revisará tu pago.");
@@ -134,6 +145,40 @@ export default function CoursesPage() {
       setRequestingCuota(false);
     }
   };
+
+  const handleViewQr = () => {
+    setShowQr(true);
+    setHasViewedQr(true);
+  };
+
+  const handleReceiptChange = (event: any) => {
+    setReceiptError("");
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      setReceiptFile(null);
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      setReceiptError("Tipo de archivo no válido. Usa JPG, PNG, WebP o PDF.");
+      setReceiptFile(null);
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      setReceiptError("El comprobante supera 3 MB.");
+      setReceiptFile(null);
+      return;
+    }
+
+    setReceiptFile(file);
+  };
+
+  const remainingCuotas = nextCuotaNeeded != null ? 4 - nextCuotaNeeded : 3;
+  const paymentAllAmount = remainingCuotas * 140;
+  const payAllLabel = `Pagar todo lo que falta (${paymentAllAmount} Bs)`;
+  const canNotifyPayment = hasViewedQr && Boolean(receiptFile) && !requestingCuota;
 
   if (loading || !user) {
     return (
@@ -368,22 +413,81 @@ export default function CoursesPage() {
               )}
             </div>
             {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && (
-              <button
-                onClick={() => handleRequestPayment(nextCuotaNeeded!)}
-                disabled={requestingCuota}
-                style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  padding: "10px 20px", borderRadius: 10,
-                  background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.4)",
-                  color: "#818cf8", fontSize: 14, fontWeight: 700,
-                  cursor: requestingCuota ? "not-allowed" : "pointer",
-                  opacity: requestingCuota ? 0.7 : 1,
-                  transition: "all 0.2s", flexShrink: 0,
-                }}
-              >
-                {requestingCuota ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CreditCard size={16} />}
-                {requestingCuota ? "Enviando..." : "Ya pagué — Notificar"}
-              </button>
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, width: "100%", marginBottom: 16 }}>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode("next")}
+                    className={`btn ${paymentMode === "next" ? "btn-primary" : "btn-secondary"}`}
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    Pagar siguiente cuota
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMode("full")}
+                    className={`btn ${paymentMode === "full" ? "btn-primary" : "btn-secondary"}`}
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    {payAllLabel}
+                  </button>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, width: "100%" }}>
+                  <button
+                    type="button"
+                    onClick={handleViewQr}
+                    className="btn btn-secondary"
+                    style={{ width: "100%", justifyContent: "center" }}
+                  >
+                    Ver QR
+                  </button>
+
+                  <label
+                    htmlFor="receipt-upload"
+                    className="btn btn-secondary"
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%", cursor: "pointer" }}
+                  >
+                    Subir comprobante
+                    <input
+                      id="receipt-upload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      onChange={handleReceiptChange}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRequestPayment(paymentMode === "next" ? nextCuotaNeeded! : 0)}
+                    disabled={!canNotifyPayment}
+                    className="btn btn-primary"
+                    style={{ width: "100%", opacity: canNotifyPayment ? 1 : 0.55, cursor: canNotifyPayment ? "pointer" : "not-allowed" }}
+                  >
+                    {requestingCuota ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CreditCard size={16} />}
+                    {requestingCuota ? "Enviando..." : "Ya pagué — Notificar"}
+                  </button>
+                </div>
+              </>
+            )}
+            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && receiptFile && (
+              <p style={{ marginTop: 10, color: "#cbd5e1", fontSize: 13 }}>Archivo seleccionado: {receiptFile.name}</p>
+            )}
+            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && receiptError && (
+              <p style={{ marginTop: 10, color: "#f87171", fontSize: 13 }}>{receiptError}</p>
+            )}
+            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && !showQr && (
+              <p style={{ marginTop: 10, color: "#94a3b8", fontSize: 13 }}>
+                Primero revisa el QR y luego sube tu comprobante para habilitar el botón de notificación.
+              </p>
+            )}
+            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && showQr && (
+              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)" }}>
+                <p style={{ marginBottom: 10, fontSize: 13, color: "#94a3b8" }}>Escanea este QR para pagar Bs. 140 por la cuota {nextCuotaNeeded}:</p>
+                <img src="/qr_pago.png" alt="Código QR para pago" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
+              </div>
             )}
           </div>
         )}
@@ -480,17 +584,21 @@ export default function CoursesPage() {
                   <div>
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
                       <span className={`px-2 py-0.5 rounded ${
-                        topic.unlocked
-                          ? "bg-primary/10 text-primary"
-                          : topic.paymentBlocked
-                            ? "bg-indigo-500/10 text-indigo-400"
-                            : "bg-slate-700/50 text-slate-300"
+                        topic.blocked
+                          ? "bg-red-500/10 text-red-400"
+                          : topic.unlocked
+                            ? "bg-primary/10 text-primary"
+                            : topic.paymentBlocked
+                              ? "bg-indigo-500/10 text-indigo-400"
+                              : "bg-slate-700/50 text-slate-300"
                       }`}>
-                        {topic.unlocked
-                          ? (topic.passed ? "Completado" : "Disponible")
-                          : topic.paymentBlocked
-                            ? "Requiere pago"
-                            : "Bloqueado"}
+                        {topic.blocked
+                          ? "Bloqueado"
+                          : topic.unlocked
+                            ? (topic.passed ? "Completado" : "Disponible")
+                            : topic.paymentBlocked
+                              ? "Requiere pago"
+                              : "Bloqueado"}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold mb-4">{topic.title}</h3>
@@ -512,15 +620,17 @@ export default function CoursesPage() {
                   </div>
 
                   <button
-                    onClick={() => topic.unlocked ? handleContinue(topic.topicOrder) : undefined}
-                    disabled={!topic.unlocked}
-                    className={`w-full mt-auto ${topic.unlocked ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
+                    onClick={() => (topic.unlocked && !topic.blocked) ? handleContinue(topic.topicOrder) : undefined}
+                    disabled={!topic.unlocked || topic.blocked}
+                    className={`w-full mt-auto ${(topic.unlocked && !topic.blocked) ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
                   >
-                    {topic.unlocked
-                      ? "Continuar con el curso"
-                      : topic.paymentBlocked
-                        ? "Requiere pago de cuota"
-                        : "Tema bloqueado"}
+                    {topic.blocked
+                      ? "Contacta al administrador"
+                      : topic.unlocked
+                        ? "Continuar con el curso"
+                        : topic.paymentBlocked
+                          ? "Requiere pago de cuota"
+                          : "Tema bloqueado"}
                   </button>
                 </div>
               ))}

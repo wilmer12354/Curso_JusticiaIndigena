@@ -16,6 +16,11 @@ type User = {
   role: string;
   status: string;
   created_at: string;
+  age?: string;
+  job_title?: string;
+  education_level?: string;
+  address?: string;
+  certificate_photo?: string;
 };
 
 type Payment = {
@@ -53,6 +58,7 @@ export default function AdminDashboard() {
     url: string;
     isPdf: boolean;
     studentLabel: string;
+    title?: string;
   } | null>(null);
 
   // Modal state
@@ -330,18 +336,18 @@ export default function AdminDashboard() {
       <main style={{ flex: 1, padding: isMobile ? "1rem" : "2.5rem 3rem", overflowY: "auto", position: "relative" }}>
         <header style={{ marginBottom: 32, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff,#94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
-            {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : "Gestión de Estudiantes"}
-          </h1>
-          <p style={{ color: "#64748b", fontSize: 14 }}>
-            {activeSection === "dashboard"
-              ? "Gestiona los contenidos de Justicia Indígena."
-              : activeSection === "pendientes"
-                ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (140 Bs) solo si el comprobante coincide con ese mes."
-                : activeSection === "pagos"
-                  ? "Cada fila es un mes (140 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
-                  : "Visualiza, crea, edita y elimina estudiantes."}
-          </p>
+            <h1 style={{ fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff,#94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
+              {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : "Gestión de Estudiantes"}
+            </h1>
+            <p style={{ color: "#64748b", fontSize: 14 }}>
+              {activeSection === "dashboard"
+                ? "Gestiona los contenidos de Justicia Indígena."
+                : activeSection === "pendientes"
+                  ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (140 Bs) solo si el comprobante coincide con ese mes."
+                  : activeSection === "pagos"
+                    ? "Cada fila es un mes (140 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
+                    : "Visualiza, crea, edita y elimina estudiantes."}
+            </p>
           </div>
           <div style={{ position: "relative", flexShrink: 0 }}>
             <button
@@ -492,13 +498,12 @@ export default function AdminDashboard() {
               {stats.map(({ label, value, icon: Icon, variant }, i) => (
                 <div key={label} style={{
                   background: "rgba(255,255,255,0.03)",
-                  border: `1px solid ${
-                    variant === "warning"
-                      ? "rgba(245,158,11,0.2)"
-                      : variant === "success"
-                        ? "rgba(34,197,94,0.22)"
-                        : "rgba(255,255,255,0.08)"
-                  }`,
+                  border: `1px solid ${variant === "warning"
+                    ? "rgba(245,158,11,0.2)"
+                    : variant === "success"
+                      ? "rgba(34,197,94,0.22)"
+                      : "rgba(255,255,255,0.08)"
+                    }`,
                   borderRadius: 16, padding: "1.25rem 1.5rem", display: "flex", alignItems: "center", gap: 14,
                 }}>
                   <div style={{
@@ -523,24 +528,24 @@ export default function AdminDashboard() {
               ))}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {pending.length > 0 && (
-              <div style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <Clock size={18} color="#f59e0b" />
-                  <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>{pending.length} estudiante{pending.length > 1 ? "s" : ""} esperando activación</span>
+              {pending.length > 0 && (
+                <div style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <Clock size={18} color="#f59e0b" />
+                    <span style={{ fontSize: 14, color: "#f59e0b", fontWeight: 600 }}>{pending.length} estudiante{pending.length > 1 ? "s" : ""} esperando activación</span>
+                  </div>
+                  <button onClick={() => setActiveSection("pendientes")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ver ahora</button>
                 </div>
-                <button onClick={() => setActiveSection("pendientes")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#f59e0b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ver ahora</button>
-              </div>
-            )}
-            {pendingPayments.length > 0 && (
-              <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.22)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <CreditCard size={18} color="#818cf8" />
-                  <span style={{ fontSize: 14, color: "#a5b4fc", fontWeight: 600 }}>{pendingPayments.length} pago{pendingPayments.length > 1 ? "s" : ""} de cuota esperando revisión</span>
+              )}
+              {pendingPayments.length > 0 && (
+                <div style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.22)", borderRadius: 14, padding: "1rem 1.25rem", display: "flex", flexDirection: isMobile ? "column" : "row", alignItems: isMobile ? "flex-start" : "center", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <CreditCard size={18} color="#818cf8" />
+                    <span style={{ fontSize: 14, color: "#a5b4fc", fontWeight: 600 }}>{pendingPayments.length} pago{pendingPayments.length > 1 ? "s" : ""} de cuota esperando revisión</span>
+                  </div>
+                  <button onClick={() => setActiveSection("pagos")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.35)", color: "#c7d2fe", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ver ahora</button>
                 </div>
-                <button onClick={() => setActiveSection("pagos")} style={{ padding: "6px 14px", borderRadius: 8, background: "rgba(99,102,241,0.2)", border: "1px solid rgba(99,102,241,0.35)", color: "#c7d2fe", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Ver ahora</button>
-              </div>
-            )}
+              )}
             </div>
           </>
         )}
@@ -568,8 +573,8 @@ export default function AdminDashboard() {
                     borderRadius: 14, padding: "1.25rem 1.5rem",
                     display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
                   }}>
-                    {u.image ? (
-                      <img src={String(u.image)} alt={String(u.name ?? "")} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(245,158,11,0.3)", flexShrink: 0 }} />
+                    {(u.certificate_photo || u.image) ? (
+                      <img src={u.certificate_photo ? (comprobantePublicUrl(u.certificate_photo) ?? undefined) : String(u.image)} alt={String(u.name ?? "")} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(245,158,11,0.3)", flexShrink: 0 }} />
                     ) : (
                       <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(245,158,11,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#f59e0b", flexShrink: 0 }}>
                         {String(u.name ?? "?")[0]?.toUpperCase()}
@@ -659,115 +664,115 @@ export default function AdminDashboard() {
                   const showPdf = raw.endsWith(".pdf") || raw.startsWith("data:application/pdf");
                   const studentLabel = p.userName || p.userEmail || "Estudiante";
                   return (
-                  <div key={p.id} style={{
-                    background: "rgba(255,255,255,0.02)",
-                    border: `1px solid ${p.status === "aprobado" ? "rgba(34,197,94,0.2)" : p.status === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.15)"}`,
-                    borderRadius: 14, padding: "1.1rem 1.4rem",
-                    display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
-                  }}>
-                    {p.userImage ? (
-                      <img src={p.userImage} alt={p.userName ?? ""} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(99,102,241,0.3)", flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: "#818cf8", flexShrink: 0 }}>
-                        {(p.userName ?? "?")[0]?.toUpperCase()}
-                      </div>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: "#f1f5f9", marginBottom: 2 }}>{p.userName || "—"}</div>
-                      <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.userEmail}</div>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
-                      <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Mes</span>
-                      <span style={{ fontSize: 20, fontWeight: 800, color: "#818cf8" }}>{p.cuota}</span>
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Monto</span>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.monto} Bs</span>
-                      </div>
-                      {receiptHref ? (
-                        <button
-                          type="button"
-                          title="Ver comprobante"
-                          onClick={() =>
-                            setReceiptModal({
-                              url: receiptHref,
-                              isPdf: showPdf,
-                              studentLabel,
-                            })
-                          }
-                          style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            padding: "8px 12px", borderRadius: 10,
-                            background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.35)",
-                            color: "#a5b4fc", fontSize: 12, fontWeight: 700,
-                            cursor: "pointer", flexShrink: 0, transition: "all 0.2s",
-                          }}
-                        >
-                          <FileImage size={16} />
-                          <span>Comprobante</span>
-                        </button>
+                    <div key={p.id} style={{
+                      background: "rgba(255,255,255,0.02)",
+                      border: `1px solid ${p.status === "aprobado" ? "rgba(34,197,94,0.2)" : p.status === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.15)"}`,
+                      borderRadius: 14, padding: "1.1rem 1.4rem",
+                      display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
+                    }}>
+                      {p.userImage ? (
+                        <img src={p.userImage} alt={p.userName ?? ""} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(99,102,241,0.3)", flexShrink: 0 }} />
                       ) : (
-                        <span style={{ fontSize: 11, color: "#475569", width: 72, textAlign: "center" }} title="Sin comprobante registrado">—</span>
+                        <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: "#818cf8", flexShrink: 0 }}>
+                          {(p.userName ?? "?")[0]?.toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: "#f1f5f9", marginBottom: 2 }}>{p.userName || "—"}</div>
+                        <div style={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.userEmail}</div>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Mes</span>
+                        <span style={{ fontSize: 20, fontWeight: 800, color: "#818cf8" }}>{p.cuota}</span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600, textTransform: "uppercase" }}>Monto</span>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9" }}>{p.monto} Bs</span>
+                        </div>
+                        {receiptHref ? (
+                          <button
+                            type="button"
+                            title="Ver comprobante"
+                            onClick={() =>
+                              setReceiptModal({
+                                url: receiptHref,
+                                isPdf: showPdf,
+                                studentLabel,
+                              })
+                            }
+                            style={{
+                              display: "flex", alignItems: "center", gap: 6,
+                              padding: "8px 12px", borderRadius: 10,
+                              background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.35)",
+                              color: "#a5b4fc", fontSize: 12, fontWeight: 700,
+                              cursor: "pointer", flexShrink: 0, transition: "all 0.2s",
+                            }}
+                          >
+                            <FileImage size={16} />
+                            <span>Comprobante</span>
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: 11, color: "#475569", width: 72, textAlign: "center" }} title="Sin comprobante registrado">—</span>
+                        )}
+                      </div>
+                      <div style={{ flexShrink: 0 }}>
+                        <span style={{
+                          padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          background: p.status === "aprobado" ? "rgba(34,197,94,0.1)" : p.status === "rechazado" ? "rgba(248,113,113,0.1)" : "rgba(99,102,241,0.1)",
+                          color: p.status === "aprobado" ? "#4ade80" : p.status === "rechazado" ? "#f87171" : "#818cf8",
+                          border: `1px solid ${p.status === "aprobado" ? "rgba(34,197,94,0.2)" : p.status === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.2)"}`,
+                        }}>
+                          {p.status === "aprobado" ? "Aprobado" : p.status === "rechazado" ? "Rechazado" : "Pendiente"}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: "#475569", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {p.createdAt ? new Date(p.createdAt).toLocaleDateString("es-BO") : "—"}
+                      </div>
+                      {p.status === "pendiente" && (
+                        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                          <button
+                            onClick={() => handlePaymentAction(p.id, "aprobado")}
+                            disabled={processingPayment === p.id}
+                            title="Aprobar pago"
+                            style={{
+                              display: "flex", alignItems: "center", gap: 6,
+                              padding: "8px 16px", borderRadius: 10,
+                              background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)",
+                              color: "#4ade80", fontSize: 13, fontWeight: 700,
+                              cursor: processingPayment === p.id ? "not-allowed" : "pointer",
+                              opacity: processingPayment === p.id ? 0.6 : 1, transition: "all 0.2s",
+                            }}
+                          >
+                            <BadgeCheck size={15} />
+                            {processingPayment === p.id ? "..." : "Aprobar"}
+                          </button>
+                          <button
+                            onClick={() => handlePaymentAction(p.id, "rechazado")}
+                            disabled={processingPayment === p.id}
+                            title="Rechazar pago"
+                            style={{
+                              display: "flex", alignItems: "center", gap: 6,
+                              padding: "8px 16px", borderRadius: 10,
+                              background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
+                              color: "#f87171", fontSize: 13, fontWeight: 700,
+                              cursor: processingPayment === p.id ? "not-allowed" : "pointer",
+                              opacity: processingPayment === p.id ? 0.6 : 1, transition: "all 0.2s",
+                            }}
+                          >
+                            <XOctagon size={15} />
+                            {processingPayment === p.id ? "..." : "Rechazar"}
+                          </button>
+                        </div>
+                      )}
+                      {p.status !== "pendiente" && (
+                        <div style={{ flexShrink: 0 }}>
+                          {p.status === "aprobado"
+                            ? <ThumbsUp size={18} color="#4ade80" />
+                            : <ThumbsDown size={18} color="#f87171" />}
+                        </div>
                       )}
                     </div>
-                    <div style={{ flexShrink: 0 }}>
-                      <span style={{
-                        padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                        background: p.status === "aprobado" ? "rgba(34,197,94,0.1)" : p.status === "rechazado" ? "rgba(248,113,113,0.1)" : "rgba(99,102,241,0.1)",
-                        color: p.status === "aprobado" ? "#4ade80" : p.status === "rechazado" ? "#f87171" : "#818cf8",
-                        border: `1px solid ${p.status === "aprobado" ? "rgba(34,197,94,0.2)" : p.status === "rechazado" ? "rgba(248,113,113,0.2)" : "rgba(99,102,241,0.2)"}`,
-                      }}>
-                        {p.status === "aprobado" ? "Aprobado" : p.status === "rechazado" ? "Rechazado" : "Pendiente"}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: "#475569", whiteSpace: "nowrap", flexShrink: 0 }}>
-                      {p.createdAt ? new Date(p.createdAt).toLocaleDateString("es-BO") : "—"}
-                    </div>
-                    {p.status === "pendiente" && (
-                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                        <button
-                          onClick={() => handlePaymentAction(p.id, "aprobado")}
-                          disabled={processingPayment === p.id}
-                          title="Aprobar pago"
-                          style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            padding: "8px 16px", borderRadius: 10,
-                            background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)",
-                            color: "#4ade80", fontSize: 13, fontWeight: 700,
-                            cursor: processingPayment === p.id ? "not-allowed" : "pointer",
-                            opacity: processingPayment === p.id ? 0.6 : 1, transition: "all 0.2s",
-                          }}
-                        >
-                          <BadgeCheck size={15} />
-                          {processingPayment === p.id ? "..." : "Aprobar"}
-                        </button>
-                        <button
-                          onClick={() => handlePaymentAction(p.id, "rechazado")}
-                          disabled={processingPayment === p.id}
-                          title="Rechazar pago"
-                          style={{
-                            display: "flex", alignItems: "center", gap: 6,
-                            padding: "8px 16px", borderRadius: 10,
-                            background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
-                            color: "#f87171", fontSize: 13, fontWeight: 700,
-                            cursor: processingPayment === p.id ? "not-allowed" : "pointer",
-                            opacity: processingPayment === p.id ? 0.6 : 1, transition: "all 0.2s",
-                          }}
-                        >
-                          <XOctagon size={15} />
-                          {processingPayment === p.id ? "..." : "Rechazar"}
-                        </button>
-                      </div>
-                    )}
-                    {p.status !== "pendiente" && (
-                      <div style={{ flexShrink: 0 }}>
-                        {p.status === "aprobado"
-                          ? <ThumbsUp size={18} color="#4ade80" />
-                          : <ThumbsDown size={18} color="#f87171" />}
-                      </div>
-                    )}
-                  </div>
                   );
                 })}
               </div>
@@ -810,7 +815,7 @@ export default function AdminDashboard() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-                    {["Usuario", "Email", "Rol", "Estado", "Creado", "Acciones"].map((h) => (
+                    {["Usuario", "Detalles", "Rol", "Estado", "Creado", "Acciones"].map((h) => (
                       <th key={h} style={{ padding: "14px 20px", textAlign: "left", fontSize: 12, color: "#64748b", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
                     ))}
                   </tr>
@@ -828,11 +833,11 @@ export default function AdminDashboard() {
                       >
                         <td style={{ padding: "14px 20px" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            {u.image ? (
+                            {(u.certificate_photo || u.image) ? (
                               <img
-                                src={String(u.image)}
+                                src={u.certificate_photo ? (comprobantePublicUrl(u.certificate_photo) ?? undefined) : String(u.image)}
                                 alt={String(u.name ?? "")}
-                                style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }}
+                                style={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(255,255,255,0.1)" }}
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none";
                                   const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -840,13 +845,19 @@ export default function AdminDashboard() {
                                 }}
                               />
                             ) : null}
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(194,65,12,0.2)", display: u.image ? "none" : "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "var(--primary)", flexShrink: 0 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(194,65,12,0.2)", display: (u.certificate_photo || u.image) ? "none" : "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "var(--primary)", flexShrink: 0 }}>
                               {String(u.name ?? "?")[0]?.toUpperCase() || "?"}
                             </div>
                             <span style={{ fontWeight: 500, fontSize: 14 }}>{u.name || "—"}</span>
                           </div>
                         </td>
-                        <td style={{ padding: "14px 20px", fontSize: 13, color: "#94a3b8" }}>{u.email}</td>
+                        <td style={{ padding: "14px 20px", fontSize: 13, color: "#94a3b8" }}>
+                          <div style={{ marginBottom: 4 }}><strong style={{ color: "#cbd5e1" }}>Email:</strong> {u.email}</div>
+                          {u.age && <div><strong style={{ color: "#cbd5e1" }}>Edad:</strong> {u.age}</div>}
+                          {u.job_title && <div><strong style={{ color: "#cbd5e1" }}>Cargo:</strong> {u.job_title}</div>}
+                          {u.education_level && <div><strong style={{ color: "#cbd5e1" }}>Estudios:</strong> {u.education_level}</div>}
+                          {u.address && <div><strong style={{ color: "#cbd5e1" }}>Dirección:</strong> {u.address}</div>}
+                        </td>
                         <td style={{ padding: "14px 20px" }}>
                           <span style={{
                             padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
@@ -882,6 +893,20 @@ export default function AdminDashboard() {
                               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "#94a3b8"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,0.1)"; }}>
                               <Trash2 size={14} />
                             </button>
+                            {u.certificate_photo && (
+                              <button
+                                onClick={() => setReceiptModal({
+                                  url: comprobantePublicUrl(u.certificate_photo) || "",
+                                  isPdf: (u.certificate_photo ?? "").toLowerCase().endsWith(".pdf"),
+                                  studentLabel: u.name || u.email,
+                                  title: "Foto para Certificado"
+                                })}
+                                title="Ver foto de certificado"
+                                style={{ padding: "7px 10px", borderRadius: 8, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)", cursor: "pointer", color: "#4ade80", display: "flex", alignItems: "center", transition: "all 0.2s" }}
+                              >
+                                <FileImage size={14} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1014,7 +1039,7 @@ export default function AdminDashboard() {
             >
               <div style={{ minWidth: 0 }}>
                 <h2 id="receipt-modal-title" style={{ fontSize: 16, fontWeight: 700, color: "#f1f5f9", margin: 0 }}>
-                  Comprobante de pago
+                  {receiptModal.title || "Comprobante de pago"}
                 </h2>
                 <p style={{ fontSize: 13, color: "#94a3b8", margin: "4px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {receiptModal.studentLabel}

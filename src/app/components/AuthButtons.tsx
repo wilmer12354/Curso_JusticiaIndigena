@@ -86,7 +86,7 @@ export function AuthButtons() {
           disabled={loadingSignIn}
           className="btn btn-primary w-full sm:w-auto"
         >
-          <UserPlus className="w-5 h-5" />
+          <UserPlus className="w-10 h-10" />
           Inscribirse
         </button>
 
@@ -97,7 +97,7 @@ export function AuthButtons() {
           disabled={loadingSignIn}
           className="btn btn-secondary w-full sm:w-auto"
         >
-          <LogIn className="w-5 h-5" />
+          <LogIn className="w-10 h-10" />
           {loadingSignIn ? "Verificando..." : "Iniciar Sesión"}
         </button>
       </div>

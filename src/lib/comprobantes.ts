@@ -52,6 +52,29 @@ export async function saveRegistrationReceipt(
   return `public/comprobantes/${filename}`;
 }
 
+/** Guarda la foto del certificado en public/fotos_certificados y devuelve la ruta */
+export async function saveCertificatePhoto(
+  file: File,
+  displayName: string,
+  userId: string
+): Promise<string> {
+  const mime = file.type;
+  const ext = MIME_TO_EXT[mime];
+  if (!ext) {
+    throw new Error("INVALID_PHOTO_TYPE");
+  }
+  if (file.size > MAX_BYTES) {
+    throw new Error("PHOTO_TOO_LARGE");
+  }
+  const base = receiptFileBaseFromName(displayName || "Estudiante", userId);
+  const filename = `${base}${ext}`;
+  const dir = path.join(process.cwd(), "public", "fotos_certificados");
+  await mkdir(dir, { recursive: true });
+  const absFile = path.join(dir, filename);
+  await writeFile(absFile, Buffer.from(await file.arrayBuffer()));
+  return `public/fotos_certificados/${filename}`;
+}
+
 export async function deletePublicComprobanteIfExists(storedPath: string | null | undefined): Promise<void> {
   if (!storedPath || !storedPath.startsWith("public/comprobantes/")) return;
   const base = path.basename(storedPath);

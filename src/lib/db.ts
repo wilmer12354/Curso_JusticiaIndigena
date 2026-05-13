@@ -29,6 +29,11 @@ export async function initDb() {
       role TEXT DEFAULT 'student',
       status TEXT DEFAULT 'pendiente',
       phone TEXT DEFAULT '',
+      age TEXT DEFAULT '',
+      job_title TEXT DEFAULT '',
+      education_level TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      certificate_photo TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -49,6 +54,11 @@ export async function initDb() {
     "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'pendiente'",
     "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''",
     "ALTER TABLE users ADD COLUMN registration_receipt TEXT",
+    "ALTER TABLE users ADD COLUMN age TEXT DEFAULT ''",
+    "ALTER TABLE users ADD COLUMN job_title TEXT DEFAULT ''",
+    "ALTER TABLE users ADD COLUMN education_level TEXT DEFAULT ''",
+    "ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''",
+    "ALTER TABLE users ADD COLUMN certificate_photo TEXT DEFAULT ''",
   ];
   for (const sql of migrations) {
     try { await db.execute(sql); } catch { /* column already exists */ }

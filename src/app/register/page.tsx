@@ -18,14 +18,28 @@ export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [age, setAge] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [educationLevel, setEducationLevel] = useState("");
+  const [address, setAddress] = useState("");
+  
   const [step, setStep] = useState<"form" | "loading">("form");
   const [error, setError] = useState<string | null>(null);
+  
   const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
+  const [ageError, setAgeError] = useState("");
+  const [jobTitleError, setJobTitleError] = useState("");
+  const [educationLevelError, setEducationLevelError] = useState("");
+  const [addressError, setAddressError] = useState("");
   const [hasPaid, setHasPaid] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null);
   const [receiptError, setReceiptError] = useState("");
+
+  const [certificatePhotoFile, setCertificatePhotoFile] = useState<File | null>(null);
+  const [certificatePhotoPreviewUrl, setCertificatePhotoPreviewUrl] = useState<string | null>(null);
+  const [certificatePhotoError, setCertificatePhotoError] = useState("");
   const [paymentMonths, setPaymentMonths] = useState<PaymentMonths>(1);
 
   const selectPaymentPlan = (m: PaymentMonths) => {
@@ -45,8 +59,9 @@ export default function RegisterPage() {
   useEffect(() => {
     return () => {
       if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl);
+      if (certificatePhotoPreviewUrl) URL.revokeObjectURL(certificatePhotoPreviewUrl);
     };
-  }, [receiptPreviewUrl]);
+  }, [receiptPreviewUrl, certificatePhotoPreviewUrl]);
 
   const onReceiptChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,20 +97,45 @@ export default function RegisterPage() {
     }
   };
 
+  const onCertificatePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setCertificatePhotoError("");
+    if (certificatePhotoPreviewUrl) {
+      URL.revokeObjectURL(certificatePhotoPreviewUrl);
+      setCertificatePhotoPreviewUrl(null);
+    }
+    if (!file) {
+      setCertificatePhotoFile(null);
+      return;
+    }
+    if (file.size > MAX_RECEIPT_BYTES) {
+      setCertificatePhotoFile(null);
+      setCertificatePhotoError("El archivo supera 3 MB. Elige una foto más pequeña.");
+      e.target.value = "";
+      return;
+    }
+    const okMime =
+      file.type === "image/jpeg" ||
+      file.type === "image/png" ||
+      file.type === "image/webp";
+    if (!okMime) {
+      setCertificatePhotoFile(null);
+      setCertificatePhotoError("Formato no admitido. Usa JPG, PNG o WebP.");
+      e.target.value = "";
+      return;
+    }
+    setCertificatePhotoFile(file);
+    setCertificatePhotoPreviewUrl(URL.createObjectURL(file));
+  };
+
   const validate = () => {
     let valid = true;
-    if (!name.trim()) {
-      setNameError("Por favor ingresa tu nombre completo.");
-      valid = false;
-    } else {
-      setNameError("");
-    }
-    if (!phone.trim() || !/^\d{7,15}$/.test(phone.trim())) {
-      setPhoneError("Ingresa un número de celular válido (7–15 dígitos).");
-      valid = false;
-    } else {
-      setPhoneError("");
-    }
+    if (!name.trim()) { setNameError("Por favor ingresa tu nombre completo."); valid = false; } else { setNameError(""); }
+    if (!phone.trim() || !/^\d{7,15}$/.test(phone.trim())) { setPhoneError("Ingresa un celular válido (7-15 dígitos)."); valid = false; } else { setPhoneError(""); }
+    if (!age.trim() || isNaN(Number(age))) { setAgeError("Ingresa una edad válida."); valid = false; } else { setAgeError(""); }
+    if (!jobTitle.trim()) { setJobTitleError("Ingresa tu cargo o autoridad."); valid = false; } else { setJobTitleError(""); }
+    if (!educationLevel.trim()) { setEducationLevelError("Ingresa tu nivel de estudio."); valid = false; } else { setEducationLevelError(""); }
+    if (!address.trim()) { setAddressError("Ingresa tu dirección."); valid = false; } else { setAddressError(""); }
     return valid;
   };
 
@@ -103,6 +143,10 @@ export default function RegisterPage() {
     if (!validate()) return;
     if (!receiptFile) {
       setError("Debes adjuntar el comprobante de pago antes de continuar.");
+      return;
+    }
+    if (!certificatePhotoFile) {
+      setError("Debes subir la foto para tu certificado.");
       return;
     }
     setError(null);
@@ -118,8 +162,13 @@ export default function RegisterPage() {
       formData.append("email", user.email ?? "");
       formData.append("image", user.photoURL ?? "");
       formData.append("phone", phone.trim());
+      formData.append("age", age.trim());
+      formData.append("jobTitle", jobTitle.trim());
+      formData.append("educationLevel", educationLevel.trim());
+      formData.append("address", address.trim());
       formData.append("enrollmentMonths", String(paymentMonths));
       formData.append("receipt", receiptFile);
+      formData.append("certificatePhoto", certificatePhotoFile);
 
       const res = await fetch("/api/sync-user", {
         method: "POST",
@@ -256,6 +305,109 @@ export default function RegisterPage() {
                 />
               </div>
               {phoneError && <p className="register-field-error">{phoneError}</p>}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="register-field">
+                <label htmlFor="reg-age" className="register-label">
+                  Edad *
+                </label>
+                <input
+                  id="reg-age"
+                  type="number"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  placeholder="Ej: 30"
+                  className={`register-input ${ageError ? "input-error" : ""}`}
+                  disabled={step === "loading"}
+                  min={1}
+                />
+                {ageError && <p className="register-field-error">{ageError}</p>}
+              </div>
+
+              <div className="register-field">
+                <label htmlFor="reg-jobTitle" className="register-label">
+                  Cargo / Autoridad *
+                </label>
+                <input
+                  id="reg-jobTitle"
+                  type="text"
+                  value={jobTitle}
+                  onChange={(e) => setJobTitle(e.target.value)}
+                  placeholder="Ej: Juez, Dirigente, Estudiante..."
+                  className={`register-input ${jobTitleError ? "input-error" : ""}`}
+                  disabled={step === "loading"}
+                />
+                {jobTitleError && <p className="register-field-error">{jobTitleError}</p>}
+              </div>
+            </div>
+
+            <div className="register-field">
+              <label htmlFor="reg-education" className="register-label">
+                Nivel de estudio *
+              </label>
+              <input
+                id="reg-education"
+                type="text"
+                value={educationLevel}
+                onChange={(e) => setEducationLevel(e.target.value)}
+                placeholder="Ej: Bachiller, Licenciatura, Maestría..."
+                className={`register-input ${educationLevelError ? "input-error" : ""}`}
+                disabled={step === "loading"}
+              />
+              {educationLevelError && <p className="register-field-error">{educationLevelError}</p>}
+            </div>
+
+            <div className="register-field">
+              <label htmlFor="reg-address" className="register-label">
+                Dirección *
+              </label>
+              <input
+                id="reg-address"
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Ej: Calle 123, Zona Sur, Ciudad..."
+                className={`register-input ${addressError ? "input-error" : ""}`}
+                disabled={step === "loading"}
+              />
+              {addressError && <p className="register-field-error">{addressError}</p>}
+            </div>
+
+            <div className="register-field">
+              <label className="register-label">
+                Foto para tu Certificado *
+              </label>
+              <p className="text-xs text-slate-400 mb-3 leading-relaxed">
+                Esta foto aparecerá en tu certificado. Debe ser formal, preferiblemente con fondo claro y de frente (JPG, PNG o WebP, máx 3MB).
+              </p>
+              <label className="register-receipt-label">
+                <Upload className="w-5 h-5 text-blue-500 flex-shrink-0" />
+                <span className="register-receipt-label-text">
+                  <span className="font-semibold text-slate-200">Subir foto (Selfie o formal)</span>
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={onCertificatePhotoChange}
+                  disabled={step === "loading"}
+                  className="register-receipt-input"
+                />
+              </label>
+              {certificatePhotoFile && (
+                <div className="mt-3 text-sm text-slate-300 flex flex-col gap-2">
+                  <span className="font-medium text-emerald-400">✓ Foto lista: {certificatePhotoFile.name}</span>
+                  {certificatePhotoPreviewUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={certificatePhotoPreviewUrl}
+                      alt="Vista previa de foto"
+                      className="max-h-40 rounded-lg border border-slate-600 object-cover w-32 h-32"
+                    />
+                  )}
+                </div>
+              )}
+              {certificatePhotoError && <p className="register-field-error mt-2">{certificatePhotoError}</p>}
             </div>
           </section>
 

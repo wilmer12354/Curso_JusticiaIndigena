@@ -17,6 +17,11 @@ export async function GET() {
       role: row.role,
       status: row.status ?? "activo",
       created_at: row.created_at,
+      age: row.age,
+      job_title: row.job_title,
+      education_level: row.education_level,
+      address: row.address,
+      certificate_photo: row.certificate_photo,
     }));
 
     return NextResponse.json(users);

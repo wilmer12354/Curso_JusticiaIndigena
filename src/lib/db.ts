@@ -59,6 +59,7 @@ export async function initDb() {
     "ALTER TABLE users ADD COLUMN education_level TEXT DEFAULT ''",
     "ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''",
     "ALTER TABLE users ADD COLUMN certificate_photo TEXT DEFAULT ''",
+    "ALTER TABLE progress ADD COLUMN blocked INTEGER DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { await db.execute(sql); } catch { /* column already exists */ }

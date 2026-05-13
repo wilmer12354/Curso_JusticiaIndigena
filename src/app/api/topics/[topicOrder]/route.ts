@@ -111,6 +111,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
         attempts: topicProgress ? Number(topicProgress.attempts ?? 0) : 0,
         passed: topicProgress ? Number(topicProgress.passed ?? 0) === 1 : false,
         completedAt: topicProgress?.completed_at ? String(topicProgress.completed_at) : null,
+        blocked: topicProgress ? Number(topicProgress.blocked ?? 0) === 1 : false,
       },
       questions: questionResult.rows.map((row) => ({
         id: Number(row.id),
@@ -165,6 +166,21 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     if (topicOrderNumber > unlockedUntil) {
       return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
     }
+
+    // Check if topic is blocked for this user (3 failed attempts)
+    const currentProgress = await db.execute({
+      sql: `SELECT blocked, attempts FROM progress WHERE user_id = ? AND topic_order = ?`,
+      args: [userId, topicOrderNumber],
+    });
+    const isBlocked = currentProgress.rows.length > 0 && Number(currentProgress.rows[0].blocked) === 1;
+    if (isBlocked) {
+      return NextResponse.json({
+        error: "Has reprobado este tema 3 veces. Escribe al administrador para que lo desbloquee.",
+        blocked: true,
+      }, { status: 403 });
+    }
+
+    const currentAttempts = currentProgress.rows.length > 0 ? Number(currentProgress.rows[0].attempts) : 0;
 
     const questionResult = await db.execute({
       sql: `
@@ -235,18 +251,21 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const score = Math.round((correctAnswers / totalQuestions) * 100);
     const passed = score >= PASSING_SCORE;
     const completedAt = passed ? new Date().toISOString() : null;
+    const newAttempts = currentAttempts + 1;
+    const blocked = !passed && newAttempts >= 3 ? 1 : 0;
 
     await db.execute({
       sql: `
-        INSERT INTO progress (user_id, topic_order, score, attempts, passed, completed_at)
-        VALUES (?, ?, ?, 1, ?, ?)
+        INSERT INTO progress (user_id, topic_order, score, attempts, passed, completed_at, blocked)
+        VALUES (?, ?, ?, 1, ?, ?, ?)
         ON CONFLICT(user_id, topic_order) DO UPDATE SET
           score = excluded.score,
           attempts = progress.attempts + 1,
           passed = CASE WHEN excluded.passed = 1 THEN 1 ELSE progress.passed END,
-          completed_at = CASE WHEN excluded.passed = 1 THEN excluded.completed_at ELSE progress.completed_at END
+          completed_at = CASE WHEN excluded.passed = 1 THEN excluded.completed_at ELSE progress.completed_at END,
+          blocked = CASE WHEN excluded.blocked = 1 THEN 1 ELSE progress.blocked END
       `,
-      args: [userId, topicOrderNumber, score, passed ? 1 : 0, completedAt],
+      args: [userId, topicOrderNumber, score, passed ? 1 : 0, completedAt, blocked],
     });
 
     return NextResponse.json({
@@ -254,9 +273,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       passed,
       correctAnswers,
       totalQuestions,
+      blocked: blocked === 1,
       progress: {
         score,
         passed,
+        blocked: blocked === 1,
       },
     });
   } catch (error) {

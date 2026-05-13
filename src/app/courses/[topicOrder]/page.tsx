@@ -26,6 +26,7 @@ type TopicProgress = {
   attempts: number;
   passed: boolean;
   completedAt: string | null;
+  blocked?: boolean;
 };
 
 type ExamResult = {
@@ -193,6 +194,7 @@ export default function TopicDetailPage() {
         return;
       }
 
+      const isBlocked = Boolean(data.blocked);
       setExamResult({
         score: Number(data.score ?? 0),
         passed: Boolean(data.passed),
@@ -205,6 +207,7 @@ export default function TopicDetailPage() {
         attempts: (prev?.attempts ?? 0) + 1,
         passed: Boolean(data.passed || prev?.passed),
         completedAt: data.passed ? new Date().toISOString() : prev?.completedAt ?? null,
+        blocked: isBlocked,
       }));
 
       // if (data.passed) {
@@ -374,7 +377,21 @@ export default function TopicDetailPage() {
               <h2 className="text-2xl font-bold">Examen del tema</h2>
             </div>
 
-            {!showExam ? (
+            {progress?.blocked ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-center">
+                  <XCircle className="mx-auto h-10 w-10 text-red-400 mb-2" />
+                  <p className="font-semibold text-red-300">Has reprobado este tema 3 veces</p>
+                  <p className="text-sm text-red-400/80 mt-1">
+                    Escribe al administrador para que desbloquee tu acceso.
+                  </p>
+                </div>
+                <Link href="/courses" className="btn btn-primary w-full inline-flex items-center justify-center gap-2">
+                  <ArrowLeft className="w-4 h-4" />
+                  Volver a mis cursos
+                </Link>
+              </div>
+            ) : !showExam ? (
               <div className="space-y-4">
                 <p className="text-slate-400">
                   Cuando te sientas preparado, inicia el examen para responder las preguntas de este tema.
@@ -538,6 +555,18 @@ export default function TopicDetailPage() {
                   >
                     Vamos al siguiente tema
                   </button>
+                ) : progress?.blocked ? (
+                  <div className="space-y-3">
+                    <p className="text-sm text-red-400 text-center">
+                      Has agotado tus 3 intentos. Escribe al administrador para desbloquear este tema.
+                    </p>
+                    <button
+                      onClick={() => router.push("/courses")}
+                      className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3"
+                    >
+                      Volver a cursos
+                    </button>
+                  </div>
                 ) : (
                   <button
                     onClick={() => startExam(examQuestions.map((q) => q.id))}

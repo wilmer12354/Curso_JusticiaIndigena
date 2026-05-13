@@ -25,6 +25,7 @@ type Topic = {
   score: number;
   attempts: number;
   passed: boolean;
+  blocked: boolean;
   completedAt: string | null;
 };
 
@@ -480,17 +481,21 @@ export default function CoursesPage() {
                   <div>
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
                       <span className={`px-2 py-0.5 rounded ${
-                        topic.unlocked
-                          ? "bg-primary/10 text-primary"
-                          : topic.paymentBlocked
-                            ? "bg-indigo-500/10 text-indigo-400"
-                            : "bg-slate-700/50 text-slate-300"
+                        topic.blocked
+                          ? "bg-red-500/10 text-red-400"
+                          : topic.unlocked
+                            ? "bg-primary/10 text-primary"
+                            : topic.paymentBlocked
+                              ? "bg-indigo-500/10 text-indigo-400"
+                              : "bg-slate-700/50 text-slate-300"
                       }`}>
-                        {topic.unlocked
-                          ? (topic.passed ? "Completado" : "Disponible")
-                          : topic.paymentBlocked
-                            ? "Requiere pago"
-                            : "Bloqueado"}
+                        {topic.blocked
+                          ? "Bloqueado"
+                          : topic.unlocked
+                            ? (topic.passed ? "Completado" : "Disponible")
+                            : topic.paymentBlocked
+                              ? "Requiere pago"
+                              : "Bloqueado"}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold mb-4">{topic.title}</h3>
@@ -512,15 +517,17 @@ export default function CoursesPage() {
                   </div>
 
                   <button
-                    onClick={() => topic.unlocked ? handleContinue(topic.topicOrder) : undefined}
-                    disabled={!topic.unlocked}
-                    className={`w-full mt-auto ${topic.unlocked ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
+                    onClick={() => (topic.unlocked && !topic.blocked) ? handleContinue(topic.topicOrder) : undefined}
+                    disabled={!topic.unlocked || topic.blocked}
+                    className={`w-full mt-auto ${(topic.unlocked && !topic.blocked) ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
                   >
-                    {topic.unlocked
-                      ? "Continuar con el curso"
-                      : topic.paymentBlocked
-                        ? "Requiere pago de cuota"
-                        : "Tema bloqueado"}
+                    {topic.blocked
+                      ? "Contacta al administrador"
+                      : topic.unlocked
+                        ? "Continuar con el curso"
+                        : topic.paymentBlocked
+                          ? "Requiere pago de cuota"
+                          : "Tema bloqueado"}
                   </button>
                 </div>
               ))}

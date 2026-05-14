@@ -293,7 +293,7 @@ export default function CoursesPage() {
             <GraduationCap className="text-primary w-8 h-8" />
             <span className="font-bold text-xl">Mis Cursos</span>
           </div>
-          
+
           <div className="flex items-center gap-6">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-medium">{user.name}</p>
@@ -486,7 +486,7 @@ export default function CoursesPage() {
             {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && showQr && (
               <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)" }}>
                 <p style={{ marginBottom: 10, fontSize: 13, color: "#94a3b8" }}>Escanea este QR para pagar Bs. 140 por la cuota {nextCuotaNeeded}:</p>
-                <img src="/qr_pago.png" alt="Código QR para pago" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
+                <img src="/qr.png" alt="Código QR para pago" loading="eager" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
               </div>
             )}
           </div>
@@ -557,9 +557,8 @@ export default function CoursesPage() {
               {topics.map((topic) => (
                 <div
                   key={topic.id}
-                  className={`glass-card flex flex-col gap-6 transition-all ${
-                    topic.unlocked ? "group hover:border-primary/40" : "opacity-80 border-white/5"
-                  }`}
+                  className={`glass-card flex flex-col gap-6 transition-all ${topic.unlocked ? "group hover:border-primary/40" : "opacity-80 border-white/5"
+                    }`}
                 >
                   <div className="aspect-video rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden relative">
                     {topic.paymentBlocked ? (
@@ -583,15 +582,14 @@ export default function CoursesPage() {
 
                   <div>
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
-                      <span className={`px-2 py-0.5 rounded ${
-                        topic.blocked
+                      <span className={`px-2 py-0.5 rounded ${topic.blocked
                           ? "bg-red-500/10 text-red-400"
                           : topic.unlocked
                             ? "bg-primary/10 text-primary"
                             : topic.paymentBlocked
                               ? "bg-indigo-500/10 text-indigo-400"
                               : "bg-slate-700/50 text-slate-300"
-                      }`}>
+                        }`}>
                         {topic.blocked
                           ? "Bloqueado"
                           : topic.unlocked

@@ -22,10 +22,10 @@ export default function RegisterPage() {
   const [jobTitle, setJobTitle] = useState("");
   const [educationLevel, setEducationLevel] = useState("");
   const [address, setAddress] = useState("");
-  
+
   const [step, setStep] = useState<"form" | "loading">("form");
   const [error, setError] = useState<string | null>(null);
-  
+
   const [nameError, setNameError] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [ageError, setAgeError] = useState("");
@@ -220,11 +220,11 @@ export default function RegisterPage() {
             Volver
           </Link>
           <div className="register-logo">
-          <img
-            src="/logo-cepabol.png"
-            alt="Logo CEPABOL"
-            className="w-12 h-12 object-contain rounded-full bg-white/10 p-1 backdrop-blur-sm"
-          />
+            <img
+              src="/logo-cepabol.png"
+              alt="Logo CEPABOL"
+              className="w-12 h-12 object-contain rounded-full bg-white/10 p-1 backdrop-blur-sm"
+            />
             <span className="register-logo-text">CEPABOL</span>
           </div>
         </div>
@@ -458,16 +458,17 @@ export default function RegisterPage() {
               </p>
               <div className="register-qr-image-wrapper">
                 <Image
-                  src="/qr_pago.png"
+                  src="/qr.png"
                   alt="Código QR para pago"
                   width={220}
                   height={220}
+                  priority
                   className="register-qr-image"
                 />
               </div>
               <div className="register-qr-amount">
                 <span className="amount-label">Monto a pagar (según tu elección)</span>
-                <span className="amount-value">Bs. {totalBs}</span>
+                {/*<span className="amount-value">Bs. {totalBs}</span>*/}
               </div>
               <p className="register-qr-note">
                 Transfiere exactamente <strong className="text-slate-300">{totalBs} Bs</strong>{" "}

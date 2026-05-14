@@ -375,7 +375,7 @@ export default function TopicDetailPage() {
                   <p className="text-sm uppercase tracking-wide text-slate-400 mb-3">Código QR de pago</p>
                   <div className="flex flex-col items-center gap-4">
                     <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
-                      <img src="/qr_pago.png" alt="Código QR para pago" className="h-48 w-48 object-contain" />
+                      <img src="/qr.png" alt="Código QR para pago" loading="eager" className="h-48 w-48 object-contain" />
                     </div>
                     <p className="text-slate-300 text-sm text-center max-w-lg">
                       Escanea el código QR para pagar con Tigo Money, QR Simple o transferencia bancaria. El monto por cuota es <strong className="text-white">Bs. {paymentAmount}</strong>.
@@ -553,9 +553,8 @@ export default function TopicDetailPage() {
                                 key={question.id}
                                 type="button"
                                 onClick={() => setCurrentQuestionIndex(index)}
-                                className={`h-2 w-6 rounded-full ${
-                                  index === currentQuestionIndex ? "bg-primary" : "bg-slate-600"
-                                }`}
+                                className={`h-2 w-6 rounded-full ${index === currentQuestionIndex ? "bg-primary" : "bg-slate-600"
+                                  }`}
                                 aria-label={`Ir a pregunta ${index + 1}`}
                               />
                             ))}
@@ -658,11 +657,11 @@ export default function TopicDetailPage() {
                   <XCircle className="h-8 w-8" />
                 </div>
               )}
-              
+
               <h3 className="mb-2 text-2xl font-bold text-white">
                 {examResult.passed ? "¡Aprobaste el tema!" : "No aprobaste aún"}
               </h3>
-              
+
               <div className="mb-6 space-y-2 text-slate-300">
                 <p className="text-lg">Tu nota: <strong className="text-white">{examResult.score}/100</strong></p>
                 <p>Respuestas correctas: {examResult.correctAnswers} de {examResult.totalQuestions}</p>

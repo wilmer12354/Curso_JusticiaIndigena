@@ -184,12 +184,12 @@ export default function LandingPage() {
                     <img src="/author1.jpg" alt="Autor 1" className="w-full h-full object-cover rounded-full bg-slate-800" />
                   </div>
                 </div>
-                <h4 className="text-xl font-bold text-white mb-2">Dr. Juan Pérez</h4>
+                <h4 className="text-xl font-bold text-white mb-2">Dr. David Ticona Balboa</h4>
                 <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-                  Investigador CEPABOL
+                  Gerente General CEPABOL
                 </div>
                 <p className="text-slate-400">
-                  Especialista en derecho constitucional y pluralismo jurídico.
+                  Perito especializado en cuestiones indígenas.
                 </p>
               </div>
 
@@ -200,12 +200,12 @@ export default function LandingPage() {
                     <img src="/author2.jpg" alt="Autora 2" className="w-full h-full object-cover rounded-full bg-slate-800" />
                   </div>
                 </div>
-                <h4 className="text-xl font-bold text-white mb-2">Dra. María Gómez</h4>
+                <h4 className="text-xl font-bold text-white mb-2">Lic. Claudia Ticona Mallea</h4>
                 <div className="inline-block px-3 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
-                  Docente Investigadora
+                  Directora Académica
                 </div>
                 <p className="text-slate-400">
-                  Experta en resolución de conflictos y sistemas comunitarios.
+                  Especialista en gestión de proyectos educativos.
                 </p>
               </div>
             </div>

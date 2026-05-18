@@ -49,9 +49,7 @@ export default function TopicDocsPage() {
             className="w-full h-[75vh] rounded-lg border-0 bg-white"
             title={`Documentación del Tema ${params.topicOrder}`}
           />
-          <p className="mt-4 text-sm text-slate-400">
-            Si no puedes visualizar el documento, intenta usar el botón de descarga en la parte superior.
-          </p>
+          
         </section>
       </main>
     </div>

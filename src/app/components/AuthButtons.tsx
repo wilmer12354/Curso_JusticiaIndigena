@@ -19,41 +19,48 @@ export function AuthButtons() {
     return data.role;
   };
 
-  // CREAR CUENTA: redirige a la página de registro
+  // CREAR CUENTA
   const handleSignUp = () => {
     router.push("/register");
   };
 
-  // INICIAR SESIÓN: Abre Google, verifica si existe en Turso ANTES de dejar pasar
+  // INICIAR SESIÓN
   const handleSignIn = async () => {
     try {
       setError(null);
       setLoadingSignIn(true);
+
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Verificar si el usuario existe en Turso
-      const res = await fetch(`/api/user-role?email=${encodeURIComponent(user.email!)}`);
+      // Verificar si existe en la BD
+      const res = await fetch(
+        `/api/user-role?email=${encodeURIComponent(user.email!)}`
+      );
 
       if (res.status === 404) {
-        // No existe en la BD: cerrar sesión de Firebase y mostrar error
         await auth.signOut();
-        //setError("No tienes una cuenta registrada. Por favor usa \"Crear Cuenta\" primero.");
+
         Swal.fire({
           icon: "error",
           title: "Cuenta no encontrada",
           text: "No tienes una cuenta registrada. Usa 'Crear Cuenta' primero.",
-          confirmButtonText: "Entendido"
+          confirmButtonText: "Entendido",
+          background: "#111827",
+          color: "#fff",
+          confirmButtonColor: "#2563eb",
         });
+
         return;
       }
 
       if (!res.ok) {
-        setError("Error al verificar tu cuenta. Inténtalo de nuevo.");
+        setError("Error al verificar tu cuenta. Inténtalo nuevamente.");
         return;
       }
 
       const data = await res.json();
+
       if (data.role === "admin") {
         router.push("/admin");
       } else {
@@ -61,7 +68,7 @@ export function AuthButtons() {
       }
     } catch (err: any) {
       if (err.code !== "auth/popup-closed-by-user") {
-        setError("Ocurrió un error al iniciar sesión. Inténtalo de nuevo.");
+        setError("Ocurrió un error al iniciar sesión.");
       }
     } finally {
       setLoadingSignIn(false);
@@ -69,25 +76,57 @@ export function AuthButtons() {
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-      {/* Error message */}
+    <div
+      className="flex flex-col items-center gap-6 animate-fade-in"
+      style={{ animationDelay: "0.4s" }}
+    >
+      {/* ERROR */}
       {error && (
-        <div className="flex items-center gap-3 px-5 py-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm max-w-md w-full">
-          <X className="w-4 h-4 flex-shrink-0" />
+        <div className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm max-w-md w-full backdrop-blur-xl">
+          <X className="w-5 h-5 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      <div className="glass-card flex flex-col sm:flex-row gap-4">
+      {/* BOTONES */}
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
+        
         {/* INSCRIBIRSE */}
         <button
           id="btn-signup"
           onClick={handleSignUp}
           disabled={loadingSignIn}
-          className="btn btn-primary w-full sm:w-auto"
+          className="
+            group
+            relative
+            overflow-hidden
+            flex items-center justify-center gap-3
+            w-full sm:w-auto
+            px-8 py-4
+            rounded-2xl
+            bg-orange-500
+            text-white
+            font-semibold
+            text-lg
+            shadow-lg shadow-primary/30
+            transition-all duration-300
+            hover:scale-105
+            hover:shadow-primary/50
+            active:scale-95
+            disabled:opacity-60
+          "
         >
-          <UserPlus className="w-10 h-10" />
-          Inscribirse
+          {/* EFECTO BRILLO */}
+          <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* SHINE */}
+          <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
+          <UserPlus className="w-6 h-6 relative z-10" />
+
+          <span className="relative z-10">
+            Inscribirse
+          </span>
         </button>
 
         {/* INICIAR SESIÓN */}
@@ -95,12 +134,37 @@ export function AuthButtons() {
           id="btn-signin"
           onClick={handleSignIn}
           disabled={loadingSignIn}
-          className="btn btn-secondary w-full sm:w-auto"
+          className="
+            group
+            relative
+            overflow-hidden
+            flex items-center justify-center gap-3
+            w-full sm:w-auto
+            px-8 py-4
+            rounded-2xl
+            border border-white/15
+            bg-white/5
+            backdrop-blur-xl
+            text-white
+            font-semibold
+            text-lg
+            transition-all duration-300
+            hover:bg-white/10
+            hover:scale-105
+            hover:border-primary/40
+            active:scale-95
+            disabled:opacity-60
+          "
         >
-          <LogIn className="w-10 h-10" />
-          {loadingSignIn ? "Verificando..." : "Iniciar Sesión"}
-        </button>
+          {/* SHINE EFFECT */}
+          <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
+          <LogIn className="w-6 h-6 relative z-10" />
+
+          <span className="relative z-10">
+            {loadingSignIn ? "Verificando..." : "Iniciar Sesión"}
+          </span>
+        </button>
       </div>
     </div>
   );

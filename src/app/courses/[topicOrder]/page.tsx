@@ -486,9 +486,7 @@ export default function TopicDetailPage() {
                     allowFullScreen
                   />
                 </div>
-                <p className="text-sm text-slate-500">
-                  Si el enlace no carga correctamente, revisa que `video_url` sea una URL embebible.
-                </p>
+                
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-slate-400">

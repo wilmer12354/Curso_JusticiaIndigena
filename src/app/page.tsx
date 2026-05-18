@@ -473,7 +473,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <h4 className="text-xl font-bold text-white mb-2">
-                Lic. Claudia Flores Choque
+                Lic. Claudia Ticona Mallea
               </h4>
               <div className="inline-block px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-sm font-medium mb-4">
                 Directora Académica

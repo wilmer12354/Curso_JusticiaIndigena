@@ -99,7 +99,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen overflow-x-hidden bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
 
       {/* ═══════════════════════════════════════════
           HERO SECTION — Header con login + Body con info
@@ -164,30 +164,30 @@ export default function LandingPage() {
           {/* Título hero centrado */}
           <div className="text-center px-6 pt-16 pb-10 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             {/* Badge */}
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center justify-center gap-3 -mt-[2rem] md:-mt-[6rem]">
               <img
                 src="/logo-cepabol.png"
                 alt="Logo CEPABOL"
-                className="w-20 h-20 object-contain rounded-full bg-white/10 p-1 backdrop-blur-sm"
+                className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-full bg-white/10 p-1 backdrop-blur-sm"
               />
-              <span className="text-4xl font-bold tracking-tight text-slate-400">CEPABOL</span>
+              <span className="text-3xl md:text-4xl font-bold tracking-tight text-slate-400">CEPABOL</span>
             </div>
 
-            <h1 className="max-w-4xl mx-auto text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight mb-1 p-7">
+            <h1 className="max-w-4xl mx-auto text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[8rem] md:mt-[11rem]">
               <span className="text-white">Curso: Justicia Indígena</span>
               <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent p-10">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
                 Originaria Campesina
               </span>
             </h1>
 
-            <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
+            <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed px-2">
               Explora y fortalece los conocimientos sobre la pluralidad jurídica
               y los sistemas de justicia comunitaria en Bolivia.
             </p>
 
             {/* Stats rápidas */}
-            <div className="flex flex-wrap justify-center gap-8 mt-10">
+            <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-8 md:mt-10">
               {[
                 { icon: Star, value: "4.9", label: "Calificación" },
                 { icon: Users, value: "50+", label: "Estudiantes" },

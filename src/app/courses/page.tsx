@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2 } from "lucide-react";
+import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2, Download } from "lucide-react";
 import { LogoutButton } from "../components/LogoutButton";
 
 type StudentUser = {
@@ -484,9 +484,18 @@ export default function CoursesPage() {
               </p>
             )}
             {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && showQr && (
-              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)" }}>
-                <p style={{ marginBottom: 10, fontSize: 13, color: "#94a3b8" }}>Escanea este QR para pagar Bs. 140 por la cuota {nextCuotaNeeded}:</p>
-                <img src="/qr.png" alt="Código QR para pago" loading="eager" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
+              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                <p style={{ marginBottom: 2, fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Escanea este QR para pagar Bs. 140 por la cuota {nextCuotaNeeded}:</p>
+                <img src="/qr_yala.png" alt="Código QR para pago" loading="eager" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
+                <a
+                  href="/qr_yala.png"
+                  download={`qr-pago-cuota-${nextCuotaNeeded}.png`}
+                  className="btn btn-secondary flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
+                  style={{ display: "inline-flex", width: "100%", maxWidth: 180, padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
+                >
+                  <Download size={14} />
+                  Descargar QR
+                </a>
               </div>
             )}
           </div>

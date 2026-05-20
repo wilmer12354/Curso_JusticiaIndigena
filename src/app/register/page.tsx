@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload } from "lucide-react";
+import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload, Download } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -458,7 +458,7 @@ export default function RegisterPage() {
               </p>
               <div className="register-qr-image-wrapper">
                 <Image
-                  src="/qr.png"
+                  src="/qr_yala.png"
                   alt="Código QR para pago"
                   width={220}
                   height={220}
@@ -466,6 +466,15 @@ export default function RegisterPage() {
                   className="register-qr-image"
                 />
               </div>
+              <a
+                href="/qr_yala.png"
+                download="qr-pago-cepabol.png"
+                className="btn btn-secondary flex items-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
+                style={{ padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
+              >
+                <Download className="w-4 h-4" />
+                Descargar QR
+              </a>
               <div className="register-qr-amount">
                 <span className="amount-label">Monto a pagar (según tu elección)</span>
                 {/*<span className="amount-value">Bs. {totalBs}</span>*/}

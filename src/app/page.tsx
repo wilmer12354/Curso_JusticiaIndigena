@@ -21,6 +21,10 @@ export default function LandingPage() {
           const res = await fetch(`/api/user-role?email=${encodeURIComponent(user.email)}`);
           if (res.ok) {
             const data = await res.json();
+            if (!data.exists) {
+              setLoading(false);
+              return;
+            }
             if (data.role === "admin") {
               router.push("/admin");
             } else {
@@ -489,7 +493,7 @@ export default function LandingPage() {
                 <div className="w-full h-full rounded-full overflow-hidden bg-background p-[0.1px] group-hover:-rotate-180 transition-transform duration-700">
                   <img
                     src="/author3.jpg"
-                    alt=""
+                    alt="Lic. Wilmer Rafael Apaza Mallea"
                     className="w-full h-full object-cover rounded-full bg-slate-800"
                   />
                 </div>

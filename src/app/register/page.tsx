@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithPopup } from "firebase/auth";
+import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload } from "lucide-react";
 import Image from "next/image";
@@ -41,6 +41,45 @@ export default function RegisterPage() {
   const [certificatePhotoPreviewUrl, setCertificatePhotoPreviewUrl] = useState<string | null>(null);
   const [certificatePhotoError, setCertificatePhotoError] = useState("");
   const [paymentMonths, setPaymentMonths] = useState<PaymentMonths>(1);
+  const [accessCheck, setAccessCheck] = useState<"loading" | "allowed" | "trial_blocked" | "no_account">("loading");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (!firebaseUser?.email) {
+        setAccessCheck("allowed");
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
+        if (!res.ok) {
+          setAccessCheck("allowed");
+          return;
+        }
+        const data = await res.json();
+        if (!data.exists) {
+          setAccessCheck("no_account");
+          return;
+        }
+        if (data.role === "admin") {
+          router.push("/admin");
+          return;
+        }
+        if (data.status === "prueba" && !data.trialExamDone) {
+          setAccessCheck("trial_blocked");
+          return;
+        }
+        if (data.status === "activo") {
+          router.push("/courses");
+          return;
+        }
+        setAccessCheck("allowed");
+      } catch {
+        setAccessCheck("allowed");
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   const selectPaymentPlan = (m: PaymentMonths) => {
     if (m !== paymentMonths) {
@@ -203,6 +242,42 @@ export default function RegisterPage() {
     }
   };
 
+  if (accessCheck === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center register-page">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (accessCheck === "no_account") {
+    return (
+      <main className="register-page">
+        <div className="register-container" style={{ maxWidth: 480, margin: "4rem auto", textAlign: "center" }}>
+          <h1 className="register-title mb-4">Primero prueba el curso</h1>
+          <p className="register-subtitle mb-6">
+            Usa «Probar gratis» en la página principal para conocer el Tema 1. Después del examen podrás inscribirte aquí.
+          </p>
+          <Link href="/" className="btn btn-primary">Ir a la página principal</Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (accessCheck === "trial_blocked") {
+    return (
+      <main className="register-page">
+        <div className="register-container" style={{ maxWidth: 480, margin: "4rem auto", textAlign: "center" }}>
+          <h1 className="register-title mb-4">Completa la prueba primero</h1>
+          <p className="register-subtitle mb-6">
+            Debes ver el Tema 1 y rendir su examen antes de inscribirte y pagar.
+          </p>
+          <Link href="/courses/1" className="btn btn-primary">Ir al Tema 1</Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="register-page">
       {/* Background */}
@@ -232,9 +307,9 @@ export default function RegisterPage() {
         {/* Card */}
         <div className="register-card">
           <div className="register-card-header">
-            <h1 className="register-title">Crear Cuenta</h1>
+            <h1 className="register-title">Inscribirme al curso</h1>
             <p className="register-subtitle">
-              Completa tus datos y realiza el pago para acceder a los cursos.
+              Completaste la prueba del Tema 1. Ahora completa tus datos y elige tu plan de pago (1, 2 o 3 meses de 140 Bs).
             </p>
           </div>
 

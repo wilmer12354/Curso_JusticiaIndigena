@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, initDb, insertEnrollmentPendingPayments } from "@/lib/db";
+import { db, initDb, insertEnrollmentPendingPayments, hasCompletedTrial } from "@/lib/db";
 import {
   saveRegistrationReceipt,
   deletePublicComprobanteIfExists,
@@ -82,8 +82,27 @@ export async function POST(request: Request) {
 
     const isAdmin = email === process.env.ADMIN_EMAIL;
     const wasExisting = existingUser.rows.length > 0;
+    const existingStatus = wasExisting ? String(existingUser.rows[0].status ?? "") : "";
+    const isTrialUser = existingStatus === "prueba";
 
     if (!wasExisting && !isAdmin) {
+      return NextResponse.json(
+        { error: "Primero prueba el Tema 1 gratis con «Probar gratis» en la página principal." },
+        { status: 400 }
+      );
+    }
+
+    if (isTrialUser && !isAdmin) {
+      const trialDone = await hasCompletedTrial(id);
+      if (!trialDone) {
+        return NextResponse.json(
+          { error: "Completa la prueba del Tema 1 antes de inscribirte." },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (isTrialUser && !isAdmin) {
       if (![1, 2, 3].includes(enrollmentMonths)) {
         return NextResponse.json(
           { error: "Indica cuántos meses pagaste: 1, 2 o 3 (140 Bs por mes)." },
@@ -183,24 +202,45 @@ export async function POST(request: Request) {
         }).catch(() => {});
       }
     } else {
-      if (phone || age || jobTitle || educationLevel || address) {
+      if (isTrialUser && !isAdmin) {
+        const receipt = registrationReceiptPath ?? null;
         await db.execute({
-          sql: "UPDATE users SET phone = ?, age = ?, job_title = ?, education_level = ?, address = ? WHERE email = ?",
-          args: [phone || "", age || "", jobTitle || "", educationLevel || "", address || "", email],
-        }).catch(() => {});
-      }
-      if (registrationReceiptPath) {
-        await deletePublicComprobanteIfExists(previousReceiptPath);
-        await db.execute({
-          sql: "UPDATE users SET registration_receipt = ? WHERE email = ?",
-          args: [registrationReceiptPath, email],
-        }).catch(() => {});
-      }
-      if (certificatePhotoPath) {
-        await db.execute({
-          sql: "UPDATE users SET certificate_photo = ? WHERE email = ?",
-          args: [certificatePhotoPath, email],
-        }).catch(() => {});
+          sql: `UPDATE users SET name = ?, image = ?, phone = ?, age = ?, job_title = ?, education_level = ?, address = ?,
+                certificate_photo = COALESCE(?, certificate_photo), status = 'pendiente',
+                registration_receipt = COALESCE(?, registration_receipt) WHERE email = ?`,
+          args: [
+            name || "",
+            image || "",
+            phone || "",
+            age || "",
+            jobTitle || "",
+            educationLevel || "",
+            address || "",
+            certificatePhotoPath,
+            receipt,
+            email,
+          ],
+        });
+      } else {
+        if (phone || age || jobTitle || educationLevel || address) {
+          await db.execute({
+            sql: "UPDATE users SET phone = ?, age = ?, job_title = ?, education_level = ?, address = ? WHERE email = ?",
+            args: [phone || "", age || "", jobTitle || "", educationLevel || "", address || "", email],
+          }).catch(() => {});
+        }
+        if (registrationReceiptPath) {
+          await deletePublicComprobanteIfExists(previousReceiptPath);
+          await db.execute({
+            sql: "UPDATE users SET registration_receipt = ? WHERE email = ?",
+            args: [registrationReceiptPath, email],
+          }).catch(() => {});
+        }
+        if (certificatePhotoPath) {
+          await db.execute({
+            sql: "UPDATE users SET certificate_photo = ? WHERE email = ?",
+            args: [certificatePhotoPath, email],
+          }).catch(() => {});
+        }
       }
       if (isAdmin && existingUser.rows[0].role !== "admin") {
         await db.execute({
@@ -210,7 +250,7 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!wasExisting && !isAdmin && [1, 2, 3].includes(enrollmentMonths)) {
+    if (isTrialUser && !isAdmin && [1, 2, 3].includes(enrollmentMonths)) {
       await insertEnrollmentPendingPayments(id, enrollmentMonths as 1 | 2 | 3);
     }
 

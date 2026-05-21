@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, ensureCourseTables, initDb, getPaymentMaxTopic } from "@/lib/db";
+import { db, ensureCourseTables, initDb, getPaymentMaxTopic, markTrialExamDone } from "@/lib/db";
 
 type RouteContext = {
   params: Promise<{ topicOrder: string }>;
@@ -17,8 +17,12 @@ async function getUnlockedUntil(userId: string, status: string | null, paymentMa
     args: [userId],
   });
 
-  // Base: first topic if account is active and has at least 1 approved cuota
-  let unlockedUntil = (status === "activo" && paymentMaxTopic >= 1) ? 1 : 0;
+  let unlockedUntil = 0;
+  if (status === "prueba") {
+    unlockedUntil = 1;
+  } else if (status === "activo" && paymentMaxTopic >= 1) {
+    unlockedUntil = 1;
+  }
 
   for (const row of progressResult.rows) {
     if (Number(row.passed) === 1) {
@@ -72,16 +76,22 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const paymentMaxTopic = await getPaymentMaxTopic(userId);
     const { unlockedUntil, progressRows } = await getUnlockedUntil(userId, status, paymentMaxTopic);
 
-    if (status !== "activo") {
+    if (status === "prueba") {
+      if (topicOrderNumber > 1) {
+        return NextResponse.json(
+          { error: "Inscríbete para acceder a más temas", needsEnrollment: true },
+          { status: 403 }
+        );
+      }
+    } else if (status !== "activo") {
       return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
-    }
-
-    if (topicOrderNumber > paymentMaxTopic) {
-      return NextResponse.json({ error: "Pago requerido", needsPayment: true, paymentMaxTopic }, { status: 403 });
-    }
-
-    if (topicOrderNumber > unlockedUntil) {
-      return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
+    } else {
+      if (topicOrderNumber > paymentMaxTopic) {
+        return NextResponse.json({ error: "Pago requerido", needsPayment: true, paymentMaxTopic }, { status: 403 });
+      }
+      if (topicOrderNumber > unlockedUntil) {
+        return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
+      }
     }
 
     const questionResult = await db.execute({
@@ -157,14 +167,22 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     const paymentMaxTopic = await getPaymentMaxTopic(userId);
     const { unlockedUntil } = await getUnlockedUntil(userId, status, paymentMaxTopic);
 
-    if (status !== "activo") {
+    if (status === "prueba") {
+      if (topicOrderNumber > 1) {
+        return NextResponse.json(
+          { error: "Inscríbete para acceder a más temas", needsEnrollment: true },
+          { status: 403 }
+        );
+      }
+    } else if (status !== "activo") {
       return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
-    }
-    if (topicOrderNumber > paymentMaxTopic) {
-      return NextResponse.json({ error: "Pago requerido", needsPayment: true }, { status: 403 });
-    }
-    if (topicOrderNumber > unlockedUntil) {
-      return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
+    } else {
+      if (topicOrderNumber > paymentMaxTopic) {
+        return NextResponse.json({ error: "Pago requerido", needsPayment: true }, { status: 403 });
+      }
+      if (topicOrderNumber > unlockedUntil) {
+        return NextResponse.json({ error: "Tema bloqueado" }, { status: 403 });
+      }
     }
 
     // Check if topic is blocked for this user (3 failed attempts)
@@ -268,12 +286,20 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       args: [userId, topicOrderNumber, score, passed ? 1 : 0, completedAt, blocked],
     });
 
+    let trialCompleted = false;
+    if (status === "prueba" && topicOrderNumber === 1) {
+      await markTrialExamDone(userId);
+      trialCompleted = true;
+    }
+
     return NextResponse.json({
       score,
       passed,
       correctAnswers,
       totalQuestions,
       blocked: blocked === 1,
+      trialCompleted,
+      canEnroll: trialCompleted,
       progress: {
         score,
         passed,

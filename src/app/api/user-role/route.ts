@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, initDb } from "@/lib/db";
+import { db, initDb, hasCompletedTrial } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
@@ -12,18 +12,35 @@ export async function GET(request: Request) {
     }
 
     const result = await db.execute({
-      sql: "SELECT name, role, status FROM users WHERE email = ?",
+      sql: "SELECT id, name, role, status, trial_exam_done FROM users WHERE email = ?",
       args: [email],
     });
 
     if (result.rows.length === 0) {
-      return NextResponse.json({ role: null }, { status: 404 });
+      return NextResponse.json({
+        exists: false,
+        role: null,
+        name: null,
+        status: null,
+        trialExamDone: false,
+        canEnroll: false,
+      });
     }
 
-    return NextResponse.json({ 
-      name: result.rows[0].name,
-      role: result.rows[0].role,
-      status: result.rows[0].status ?? "activo",
+    const row = result.rows[0];
+    const status = String(row.status ?? "activo");
+    const userId = String(row.id);
+    const trialExamDone =
+      Number(row.trial_exam_done) === 1 || (await hasCompletedTrial(userId));
+    const canEnroll = status === "prueba" && trialExamDone;
+
+    return NextResponse.json({
+      exists: true,
+      name: row.name,
+      role: row.role,
+      status,
+      trialExamDone,
+      canEnroll,
     });
   } catch (error) {
     console.error("Fetch User Role Error:", error);

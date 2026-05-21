@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard } from "lucide-react";
+import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
 
@@ -65,6 +65,8 @@ export default function TopicDetailPage() {
   const [paymentNotice, setPaymentNotice] = useState("");
   const [paymentRequesting, setPaymentRequesting] = useState(false);
   const [paymentRequested, setPaymentRequested] = useState(false);
+  const [canEnroll, setCanEnroll] = useState(false);
+  const [needsEnrollment, setNeedsEnrollment] = useState(false);
   const answeredCount = examQuestions.filter((question) => selectedAnswers[question.id]).length;
   const isExamComplete = examQuestions.length > 0 && answeredCount === examQuestions.length;
 
@@ -85,12 +87,17 @@ export default function TopicDetailPage() {
 
         const roleData = await roleRes.json();
 
+        if (!roleData.exists) {
+          router.push("/");
+          return;
+        }
+
         if (roleData.role === "admin") {
           router.push("/admin");
           return;
         }
 
-        if (roleData.status !== "activo") {
+        if (roleData.status !== "activo" && roleData.status !== "prueba") {
           router.push("/courses");
           return;
         }
@@ -100,6 +107,7 @@ export default function TopicDetailPage() {
           name: roleData.name || firebaseUser.displayName || "Estudiante",
           status: roleData.status,
         });
+        setCanEnroll(Boolean(roleData.canEnroll));
 
         const topicRes = await fetch(
           `/api/topics/${params.topicOrder}?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(roleData.status)}`
@@ -109,6 +117,9 @@ export default function TopicDetailPage() {
           const topicData = await topicRes.json().catch(() => null);
           if (topicRes.status === 403 && topicData?.needsPayment) {
             setNeedsPayment(true);
+          }
+          if (topicRes.status === 403 && topicData?.needsEnrollment) {
+            setNeedsEnrollment(true);
           }
           setError(topicData?.error ?? "No se pudo cargar este tema.");
           setLoading(false);
@@ -221,7 +232,8 @@ export default function TopicDetailPage() {
     setShowQr(true);
   };
 
-  const isTopicPaymentBlocked = needsPayment;
+  const isTopicPaymentBlocked = needsPayment && student?.status !== "prueba";
+  const isTrialMode = student?.status === "prueba";
 
   const handleSubmitExam = async () => {
     if (!student || !topic) {
@@ -279,6 +291,10 @@ export default function TopicDetailPage() {
         completedAt: data.passed ? new Date().toISOString() : prev?.completedAt ?? null,
         blocked: isBlocked,
       }));
+
+      if (data.trialCompleted || data.canEnroll) {
+        setCanEnroll(true);
+      }
     } catch {
       setSubmitError("Error de red al enviar el examen.");
     } finally {
@@ -313,7 +329,18 @@ export default function TopicDetailPage() {
             Volver a mis cursos
           </Link>
 
-          {needsPayment ? (
+          {needsEnrollment ? (
+            <div className="glass-card max-w-2xl" style={{ borderColor: "rgba(245,158,11,0.3)" }}>
+              <h1 className="text-3xl font-bold mb-3">Inscripción requerida</h1>
+              <p className="text-slate-400 mb-6">
+                Completa la prueba del Tema 1 y luego inscríbete para acceder al resto del curso.
+              </p>
+              <Link href="/courses" className="btn btn-primary inline-flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Volver a mis cursos
+              </Link>
+            </div>
+          ) : needsPayment && student?.status !== "prueba" ? (
             <div className="glass-card max-w-2xl" style={{ borderColor: "rgba(99,102,241,0.3)" }}>
               <div style={{
                 width: 56, height: 56, borderRadius: "50%",
@@ -663,15 +690,37 @@ export default function TopicDetailPage() {
               <div className="mb-6 space-y-2 text-slate-300">
                 <p className="text-lg">Tu nota: <strong className="text-white">{examResult.score}/100</strong></p>
                 <p>Respuestas correctas: {examResult.correctAnswers} de {examResult.totalQuestions}</p>
-                {examResult.passed ? (
+                {isTrialMode ? (
+                  <p className="text-sm text-amber-400 mt-2">
+                    {canEnroll
+                      ? "Ya puedes inscribirte y elegir tu plan de pago para continuar con todos los temas."
+                      : "Tras este intento podrás inscribirte para acceder al curso completo."}
+                  </p>
+                ) : examResult.passed ? (
                   <p className="text-sm text-green-400 mt-2">¡Felicidades! Has desbloqueado el siguiente contenido.</p>
                 ) : (
                   <p className="text-sm text-red-400 mt-2">Puedes intentarlo nuevamente con otras preguntas.</p>
                 )}
               </div>
 
-              <div className="flex gap-3">
-                {examResult.passed ? (
+              <div className="flex flex-col gap-3">
+                {isTrialMode && canEnroll && (
+                  <Link
+                    href="/register"
+                    className="btn w-full bg-green-600 hover:bg-green-500 text-white border-none py-3 inline-flex items-center justify-center gap-2"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Continuar e inscribirme
+                  </Link>
+                )}
+                {isTrialMode ? (
+                  <button
+                    onClick={() => router.push("/courses")}
+                    className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3"
+                  >
+                    Volver a mis cursos
+                  </button>
+                ) : examResult.passed ? (
                   <button
                     onClick={() => router.push("/courses")}
                     className="btn w-full bg-green-600 hover:bg-green-500 text-white border-none py-3"

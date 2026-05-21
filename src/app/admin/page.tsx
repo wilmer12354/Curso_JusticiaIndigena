@@ -98,12 +98,12 @@ export default function AdminDashboard() {
           const res = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
           if (res.ok) {
             const data = await res.json();
-            if (data.role === "admin") {
-              setAdminUser({ name: data.name || firebaseUser.displayName || "Admin" });
-              setLoading(false);
-            } else {
-              router.push("/courses");
+            if (!data.exists || data.role !== "admin") {
+              router.push("/");
+              return;
             }
+            setAdminUser({ name: data.name || firebaseUser.displayName || "Admin" });
+            setLoading(false);
           } else {
             router.push("/");
           }

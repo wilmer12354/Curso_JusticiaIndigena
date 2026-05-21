@@ -62,6 +62,7 @@ export async function initDb() {
     "ALTER TABLE users ADD COLUMN certificate_photo TEXT DEFAULT ''",
     "ALTER TABLE payments ADD COLUMN payment_receipt TEXT",
     "ALTER TABLE progress ADD COLUMN blocked INTEGER DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN trial_exam_done INTEGER DEFAULT 0",
   ];
   for (const sql of migrations) {
     try { await db.execute(sql); } catch { /* column already exists */ }
@@ -106,6 +107,32 @@ export async function getPaymentMaxTopic(userId: string): Promise<number> {
   if (approvedCuotas.has(2)) return 16;
   if (approvedCuotas.has(1)) return 8;
   return 0;
+}
+
+/** True if the user finished the free trial exam on topic 1. */
+export async function hasCompletedTrial(userId: string): Promise<boolean> {
+  await ensureCourseTables();
+
+  const userResult = await db.execute({
+    sql: `SELECT trial_exam_done FROM users WHERE id = ?`,
+    args: [userId],
+  });
+  if (userResult.rows.length > 0 && Number(userResult.rows[0].trial_exam_done) === 1) {
+    return true;
+  }
+
+  const progressResult = await db.execute({
+    sql: `SELECT attempts FROM progress WHERE user_id = ? AND topic_order = 1`,
+    args: [userId],
+  });
+  return progressResult.rows.length > 0 && Number(progressResult.rows[0].attempts) >= 1;
+}
+
+export async function markTrialExamDone(userId: string): Promise<void> {
+  await db.execute({
+    sql: `UPDATE users SET trial_exam_done = 1 WHERE id = ?`,
+    args: [userId],
+  });
 }
 
 export async function ensureCourseTables() {

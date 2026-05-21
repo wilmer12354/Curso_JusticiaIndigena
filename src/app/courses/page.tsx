@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2 } from "lucide-react";
+import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { LogoutButton } from "../components/LogoutButton";
 
 type StudentUser = {
@@ -21,6 +22,7 @@ type Topic = {
   unlocked: boolean;
   locked: boolean;
   paymentBlocked: boolean;
+  trialLocked?: boolean;
   isCurrent: boolean;
   score: number;
   attempts: number;
@@ -59,6 +61,9 @@ export default function CoursesPage() {
   const [paymentMode, setPaymentMode] = useState<"next" | "full">("next");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptError, setReceiptError] = useState("");
+  const [trialMode, setTrialMode] = useState(false);
+  const [trialExamDone, setTrialExamDone] = useState(false);
+  const [canEnroll, setCanEnroll] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -67,6 +72,10 @@ export default function CoursesPage() {
           const res = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
           if (res.ok) {
             const data = await res.json();
+            if (!data.exists) {
+              router.push("/");
+              return;
+            }
             if (data.role === "admin") {
               router.push("/admin");
             } else {
@@ -74,11 +83,10 @@ export default function CoursesPage() {
               setUser({ id: firebaseUser.uid, name: data.name || firebaseUser.displayName || "Estudiante" });
               setStatus(nextStatus);
 
-              if (nextStatus === "activo") {
-                const [topicsRes, paymentsRes] = await Promise.all([
-                  fetch(`/api/course-topics?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(nextStatus)}`),
-                  fetch(`/api/payments?userId=${encodeURIComponent(firebaseUser.uid)}`),
-                ]);
+              if (nextStatus === "activo" || nextStatus === "prueba") {
+                const topicsRes = await fetch(
+                  `/api/course-topics?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(nextStatus)}`
+                );
 
                 if (topicsRes.ok) {
                   const topicsData = await topicsRes.json();
@@ -86,14 +94,26 @@ export default function CoursesPage() {
                   setCurrentTopic(topicsData.currentTopic ?? null);
                   setNextCuotaNeeded(topicsData.nextCuotaNeeded ?? null);
                   setPaymentMaxTopic(topicsData.paymentMaxTopic ?? 0);
+                  setTrialMode(Boolean(topicsData.trialMode));
+                  setTrialExamDone(Boolean(topicsData.trialExamDone));
+                  setCanEnroll(Boolean(topicsData.canEnroll));
                 }
-                if (paymentsRes.ok) {
-                  const paymentsData = await paymentsRes.json();
-                  setPayments(paymentsData.payments ?? []);
+
+                if (nextStatus === "activo") {
+                  const paymentsRes = await fetch(`/api/payments?userId=${encodeURIComponent(firebaseUser.uid)}`);
+                  if (paymentsRes.ok) {
+                    const paymentsData = await paymentsRes.json();
+                    setPayments(paymentsData.payments ?? []);
+                  }
+                } else {
+                  setPayments([]);
                 }
               } else {
                 setTopics([]);
                 setCurrentTopic(null);
+                setTrialMode(false);
+                setTrialExamDone(false);
+                setCanEnroll(false);
               }
 
               setLoading(false);
@@ -307,8 +327,53 @@ export default function CoursesPage() {
       <main className="container py-12">
         <header className="mb-8">
           <h1 className="!text-4xl">Tus Cursos de Formación</h1>
-          <p className="text-slate-400 mt-2">Continúa tu aprendizaje sobre los sistemas de justicia comunitaria.</p>
+          <p className="text-slate-400 mt-2">
+            {trialMode
+              ? "Modo prueba: explora el Tema 1 gratis. Tras el examen podrás inscribirte."
+              : "Continúa tu aprendizaje sobre los sistemas de justicia comunitaria."}
+          </p>
         </header>
+
+        {trialMode && (
+          <div style={{
+            background: canEnroll ? "rgba(34,197,94,0.08)" : "rgba(245,158,11,0.06)",
+            border: `1px solid ${canEnroll ? "rgba(34,197,94,0.25)" : "rgba(245,158,11,0.25)"}`,
+            borderRadius: 16,
+            padding: "1.25rem 1.5rem",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
+          }}>
+            <div style={{
+              width: 44, height: 44, borderRadius: "50%",
+              background: canEnroll ? "rgba(34,197,94,0.15)" : "rgba(245,158,11,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <Sparkles size={22} color={canEnroll ? "#4ade80" : "#f59e0b"} />
+            </div>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <p style={{ fontWeight: 700, color: "#f1f5f9", marginBottom: 4 }}>
+                {canEnroll ? "¡Prueba completada!" : "Estás en modo prueba — solo el Tema 1"}
+              </p>
+              <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>
+                {canEnroll
+                  ? "Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de 140 Bs)."
+                  : "Mira el video y rinde el examen del Tema 1. Después podrás inscribirte."}
+              </p>
+            </div>
+            {canEnroll && (
+              <Link
+                href="/register"
+                className="btn btn-primary"
+                style={{ flexShrink: 0 }}
+              >
+                Inscribirme y pagar
+              </Link>
+            )}
+          </div>
+        )}
 
         {/* Payment progress bar */}
         {status === "activo" && (
@@ -573,9 +638,9 @@ export default function CoursesPage() {
                     <div className="absolute top-3 left-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
                       Tema {topic.topicOrder}
                     </div>
-                    {topic.paymentBlocked && (
+                    {(topic.paymentBlocked || topic.trialLocked) && (
                       <div className="absolute bottom-3 left-3 right-3 rounded-lg bg-black/70 px-2 py-1 text-xs text-indigo-300 text-center font-semibold">
-                        Requiere pago
+                        {topic.trialLocked ? "Inscríbete para desbloquear" : "Requiere pago"}
                       </div>
                     )}
                   </div>
@@ -586,7 +651,7 @@ export default function CoursesPage() {
                           ? "bg-red-500/10 text-red-400"
                           : topic.unlocked
                             ? "bg-primary/10 text-primary"
-                            : topic.paymentBlocked
+                            : topic.paymentBlocked || topic.trialLocked
                               ? "bg-indigo-500/10 text-indigo-400"
                               : "bg-slate-700/50 text-slate-300"
                         }`}>
@@ -594,9 +659,11 @@ export default function CoursesPage() {
                           ? "Bloqueado"
                           : topic.unlocked
                             ? (topic.passed ? "Completado" : "Disponible")
-                            : topic.paymentBlocked
-                              ? "Requiere pago"
-                              : "Bloqueado"}
+                            : topic.trialLocked
+                              ? "Tras inscripción"
+                              : topic.paymentBlocked
+                                ? "Requiere pago"
+                                : "Bloqueado"}
                       </span>
                     </div>
                     <h3 className="text-xl font-bold mb-4">{topic.title}</h3>
@@ -626,9 +693,11 @@ export default function CoursesPage() {
                       ? "Contacta al administrador"
                       : topic.unlocked
                         ? "Continuar con el curso"
-                        : topic.paymentBlocked
-                          ? "Requiere pago de cuota"
-                          : "Tema bloqueado"}
+                        : topic.trialLocked
+                          ? canEnroll ? "Inscríbete para continuar" : "Completa el examen del Tema 1"
+                          : topic.paymentBlocked
+                            ? "Requiere pago de cuota"
+                            : "Tema bloqueado"}
                   </button>
                 </div>
               ))}

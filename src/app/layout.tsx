@@ -15,6 +15,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Justicia Indigena",
   description: "Curso de Justicia Indigena",
+  icons: {
+    icon: "/logo-cepabol.png",
+  },
 };
 
 export default function RootLayout({

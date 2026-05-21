@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
+<<<<<<< HEAD
 import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus } from "lucide-react";
+=======
+import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, Download } from "lucide-react";
+>>>>>>> 386ecfd90780223df32c9f3aa69e2c91ba2592bb
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
 
@@ -402,8 +406,17 @@ export default function TopicDetailPage() {
                   <p className="text-sm uppercase tracking-wide text-slate-400 mb-3">Código QR de pago</p>
                   <div className="flex flex-col items-center gap-4">
                     <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
-                      <img src="/qr.png" alt="Código QR para pago" loading="eager" className="h-48 w-48 object-contain" />
+                      <img src="/qr_yala.png" alt="Código QR para pago" loading="eager" className="h-48 w-48 object-contain" />
                     </div>
+                    <a
+                      href="/qr_yala.png"
+                      download={`qr-pago-cuota-${paymentCuota}.png`}
+                      className="btn btn-secondary flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
+                      style={{ padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
+                    >
+                      <Download className="w-4 h-4" />
+                      Descargar QR
+                    </a>
                     <p className="text-slate-300 text-sm text-center max-w-lg">
                       Escanea el código QR para pagar con Tigo Money, QR Simple o transferencia bancaria. El monto por cuota es <strong className="text-white">Bs. {paymentAmount}</strong>.
                     </p>

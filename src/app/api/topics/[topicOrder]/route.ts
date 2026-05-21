@@ -5,7 +5,7 @@ type RouteContext = {
   params: Promise<{ topicOrder: string }>;
 };
 
-const PASSING_SCORE = 70;
+const PASSING_SCORE = 67;
 
 async function getUnlockedUntil(userId: string, status: string | null, paymentMaxTopic: number) {
   const progressResult = await db.execute({
@@ -222,9 +222,9 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       );
     }
 
-    if (answers.length !== 3) {
+    if (answers.length !== 6) {
       return NextResponse.json(
-        { error: "Debes enviar exactamente 3 respuestas por intento." },
+        { error: "Debes enviar exactamente 6 respuestas por intento." },
         { status: 400 }
       );
     }
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       }
     }
 
-    if (answersMap.size !== 3) {
+    if (answersMap.size !== 6) {
       return NextResponse.json(
         { error: "Las respuestas enviadas no son válidas para este tema." },
         { status: 400 }

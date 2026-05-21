@@ -165,7 +165,7 @@ export default function TopicDetailPage() {
   };
 
   const startExam = (avoidIds: number[] = []) => {
-    const selected = getRandomQuestions(questions, 3, avoidIds);
+    const selected = getRandomQuestions(questions, 6, avoidIds);
     setExamQuestions(selected);
     setCurrentQuestionIndex(0);
     setSelectedAnswers({});
@@ -178,8 +178,8 @@ export default function TopicDetailPage() {
   };
 
   const getPaymentCuotaForTopic = (order: number) => {
-    if (order <= 8) return 1;
-    if (order <= 16) return 2;
+    if (order <= 7) return 1;
+    if (order <= 15) return 2;
     return 3;
   };
 

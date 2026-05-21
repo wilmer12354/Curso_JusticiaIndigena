@@ -10,7 +10,7 @@ import Link from "next/link";
 
 const MAX_RECEIPT_BYTES = 3 * 1024 * 1024;
 const RECEIPT_ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
-const PRICE_PER_MONTH = 140;
+const PRICE_PER_MONTH = 120;
 
 type PaymentMonths = 1 | 2 | 3;
 
@@ -309,7 +309,7 @@ export default function RegisterPage() {
           <div className="register-card-header">
             <h1 className="register-title">Inscribirme al curso</h1>
             <p className="register-subtitle">
-              Completaste la prueba del Tema 1. Ahora completa tus datos y elige tu plan de pago (1, 2 o 3 meses de 140 Bs).
+              Completaste la prueba del Tema 1. Ahora completa tus datos y elige tu plan de pago (1, 2 o 3 meses de 120 Bs).
             </p>
           </div>
 
@@ -505,8 +505,8 @@ export default function RegisterPage() {
               {(
                 [
                   { m: 1 as const, title: "1 mes", hint: "Solo primer bloque del curso" },
-                  { m: 2 as const, title: "2 meses", hint: "Dos bloques (280 Bs en total)" },
-                  { m: 3 as const, title: "3 meses (completo)", hint: "Curso completo (420 Bs en total)" },
+                  { m: 2 as const, title: "2 meses", hint: "Dos bloques (240 Bs en total)" },
+                  { m: 3 as const, title: "3 meses (completo)", hint: "Curso completo (360 Bs en total) + Documentos únicos de jurisdicción" },
                 ] as const
               ).map(({ m, title, hint }) => (
                 <button

@@ -93,9 +93,9 @@ export async function insertEnrollmentPendingPayments(
 
 /**
  * Returns the maximum topic order a user can access based on approved payments.
- * Cuota 1 (approved) → topics 1-8
- * Cuota 2 (approved) → topics 9-16
- * Cuota 3 (approved) → topics 17+ (all remaining)
+ * Cuota 1 (approved) → topics 1-7
+ * Cuota 2 (approved) → topics 8-15
+ * Cuota 3 (approved) → topics 16+ (all remaining)
  */
 export async function getPaymentMaxTopic(userId: string): Promise<number> {
   const result = await db.execute({
@@ -106,8 +106,8 @@ export async function getPaymentMaxTopic(userId: string): Promise<number> {
   const approvedCuotas = new Set(result.rows.map((r) => Number(r.cuota)));
 
   if (approvedCuotas.has(3) || approvedCuotas.size === 3) return 999; // All topics
-  if (approvedCuotas.has(2)) return 16;
-  if (approvedCuotas.has(1)) return 8;
+  if (approvedCuotas.has(2)) return 15;
+  if (approvedCuotas.has(1)) return 7;
   return 0;
 }
 

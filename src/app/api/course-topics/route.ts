@@ -109,9 +109,9 @@ export async function GET(request: NextRequest) {
       ? null
       : paymentMaxTopic === 0
         ? 1
-        : paymentMaxTopic === 8
+        : paymentMaxTopic === 7
           ? 2
-          : paymentMaxTopic === 16
+          : paymentMaxTopic === 15
             ? 3
             : null;
 

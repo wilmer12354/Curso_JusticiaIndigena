@@ -177,7 +177,9 @@ export default function LandingPage() {
               <span className="text-3xl md:text-4xl font-bold tracking-tight text-slate-400">CEPABOL</span>
             </div>
 
-            <h1 className="max-w-4xl mx-auto text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[8rem] md:mt-[11rem]">
+            <h1 className="max-w-4xl mx-auto text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[8rem] md:mt-[11rem]">
+              <span className="text-white">Escuela de Jueces Naturales</span>
+              <br/>
               <span className="text-white">Curso: Justicia Indígena</span>
               <br />
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
@@ -240,56 +242,92 @@ export default function LandingPage() {
 
         {/* Grid de módulos / características */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
+
           {[
             {
+              title: "Módulo 1",
               icon: Scale,
               color: "primary",
-              title: "Marcos Normativos",
-              desc: "Comprende la Constitución Política del Estado y las leyes que reconocen y protegen la Justicia Indígena Originaria Campesina en Bolivia.",
+              topics: [
+                "Ley N° 073 de Deslinde Jurisdiccional.",
+                "Sistema Judicial Indígena.",
+                "Declaración de Naciones Unidas sobre los Derechos de los Pueblos Indígenas.",
+                "Protocolo de Actuación intercultural de los jueces y juezas en el marco del pluralismo jurídico igualitario.",
+                "Justicia Constitucional Plural",
+                "Lineamientos para la Coordinacion y Cooperación entre la Justicia Ordinaria y la Justicia Indígena Originaria Campesina",
+                "La Cosa Juzgada y Mecanismos de Ejecución de la Sentencia de la JIOC (Parte 1)",
+              ],
             },
+
             {
+              title: "Módulo 2",
               icon: Shield,
               color: "accent",
-              title: "Jurisdicción y Competencia",
-              desc: "Aprende los límites territoriales, personales y materiales de la jurisdicción comunitaria y su relación con el sistema jurídico nacional.",
+              topics: [
+                "La Cosa Juzgada y mecanismos de ejecución de la sentencia de la JIOC (Parte 2)",
+                "Pluralismo Jurídico y Marco Constitucional.",
+                "Tribunal Constitucional y la Justicia Indígena Originaria Campesina",,
+                "Fuentes del Derecho Indígena Normas, Uso, Prácticas y Costumbres",
+                "Estudio de Casos Reales",
+                "Procedimientos de la Justicia Indígena.",
+                "Litigio Estratégico en el Ámbito Internacional."
+                
+              ],
             },
+
             {
-              icon: Users,
-              color: "primary",
-              title: "Procedimientos Comunitarios",
-              desc: "Estudia los mecanismos de resolución de conflictos desde la perspectiva ancestral, incluyendo la toma de decisiones colectiva.",
-            },
-            {
+              title: "Módulo 3",
               icon: BookOpen,
-              color: "accent",
-              title: "Pluralismo Jurídico",
-              desc: "Explora cómo coexisten múltiples sistemas legales en Bolivia y la importancia del diálogo intercultural en la justicia.",
-            },
-            {
-              icon: Award,
               color: "primary",
-              title: "Saberes Ancestrales",
-              desc: "Reconoce el valor de los conocimientos y prácticas tradicionales como fuente de derecho y forma de vida en las comunidades.",
+              topics: [
+                "La minería y los pueblos originarios.",
+                "Catastro Rural - INRA",
+                "Más proximamente...",
+              ],
             },
-            {
-              icon: Star,
-              color: "accent",
-              title: "Casos Prácticos",
-              desc: "Analiza situaciones reales y aprende cómo se aplica la justicia comunitaria en contextos contemporáneos bolivianos.",
-            },
-          ].map(({ icon: Icon, color, title, desc }, i) => (
+          ].map(({ icon: Icon, color, title, topics }) => (
+
             <div
               key={title}
-              className="hero-card opacity-0 group relative bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-7 hover:bg-white/8 hover:border-white/15 transition-all duration-500 hover:-translate-y-1"
+              className="hero-card group relative bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-7 hover:bg-white/8 hover:border-white/15 transition-all duration-500 hover:-translate-y-1"
             >
-              {/* Glow en hover */}
-              <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${color === 'primary' ? 'from-primary/5 to-transparent' : 'from-accent/5 to-transparent'}`} />
 
-              <div className={`relative inline-flex p-3 rounded-xl mb-5 ${color === 'primary' ? 'bg-primary/10 text-primary' : 'bg-accent/10 text-accent'}`}>
+              {/* Glow */}
+              <div
+                className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${color === "primary"
+                    ? "from-primary/5 to-transparent"
+                    : "from-accent/5 to-transparent"
+                  }`}
+              />
+
+              {/* Icono */}
+              <div
+                className={`relative inline-flex p-3 rounded-xl mb-5 ${color === "primary"
+                    ? "bg-primary/10 text-primary"
+                    : "bg-accent/10 text-accent"
+                  }`}
+              >
                 <Icon className="w-6 h-6" />
               </div>
-              <h3 className="relative text-white font-bold text-lg mb-3 leading-tight">{title}</h3>
-              <p className="relative text-slate-400 text-sm leading-relaxed">{desc}</p>
+
+              {/* Titulo */}
+              <h3 className="relative text-white font-bold text-xl mb-5">
+                {title}
+              </h3>
+
+              {/* Lista */}
+              <ul className="relative space-y-3">
+                {topics.map((topic) => (
+                  <li
+                    key={topic}
+                    className="flex items-start gap-3 text-slate-300 text-sm"
+                  >
+                    <span className="mt-1 w-2 h-2 rounded-full bg-primary" />
+                    {topic}
+                  </li>
+                ))}
+              </ul>
+
             </div>
           ))}
         </div>

@@ -40,9 +40,9 @@ type Payment = {
 };
 
 const CUOTA_LABELS: Record<number, string> = {
-  1: "1ª cuota (Temas 1–8)",
-  2: "2ª cuota (Temas 9–16)",
-  3: "3ª cuota (Temas 17–21)",
+  1: "1ª cuota (Temas 1–7)",
+  2: "2ª cuota (Temas 8–15)",
+  3: "3ª cuota (Temas 16–21)",
 };
 
 export default function CoursesPage() {

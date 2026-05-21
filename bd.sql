@@ -1,138 +1,152 @@
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   1,
-  'PLURALISMO JURIDICO Y MARCO CONSTITUCIONAL',
-  'Concepto, reconocimiento constitucional de la JIOC, funciones jurisdiccionales indigenas, validez y limites de la JIOC. COMPETENCIAS: Identifica el sistema pluralista y su alcance.',
-  'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  'LEY N° 073 DE DESLINDE JURISDICCIONAL: ALCANCES E IMPLICANCIAS A LA LUZ DEL PLURALISMO JURÍDICO IGUALITARIO',
+  'Ley N° 073 de Deslinde Jurisdiccional en Bolivia, la cual establece la igualdad de jerarquía entre los sistemas de justicia ordinario e indígena. Define los ámbitos de vigencia personal, territorial y material para evitar conflictos de competencia entre las distintas jurisdicciones. Además, mecanismos de coordinación y cooperación para asegurar el respeto a los derechos humanos y la libre determinación de los pueblos.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   2,
-  'AUTONOMIAS INDIGENAS Y SU SITEMA JUDICIAL',
-  'Análisis comparativo de las autonomías indígenas existentes en Bolivia, características y diferencias de la JIOC en las autonomías, experiencias en la aplicación. COMPETENCIAS: Conocer las características de una autonomía indígena para aplicarlo en su territorio.',
-  ''
+  'SISTEMA JUDICIAL INDÍGENA',
+  'Justicia Indígena en Bolivia y su competencia para aplicar derecho consuetudinario y métodos tradicionales. Las comunidades poseen autonomía para el autogobierno, la resolución de conflictos y la administración de presupuestos propios.Sistemas jurídicos según su cosmovisión y estatutos orgánicos.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   3,
-  'FUENTES DEL DERECHO PROPIO: NORMAS, USOS, PRÁCTICAS Y COSTUMBRES',
-  'Oralidad y carácter colectivo del derecho propio. Identificación y validación de normas consuetudinarias. COMPETENCIAS: Aplicar correctamente las normas propias en un proceso indígena.',
-  ''
+  'DECLARACIÓN DE LAS NACIONES UNIDAS SOBRE LOS
+DERECHOS DE LOS PUEBLOS INDÍGENAS
+',
+  'Derechos fundamentales de los pueblos indígenas y su facultad de libre determinación y autogobierno conforme a la normativa internacional. Derecho a sistemas políticos y jurídicos propios frente a las injusticias históricas de la colonización. Reformas legales para garantizar la consulta previa y la coordinación efectiva entre la justicia indígena y la ordinaria ',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   4,
-  'PROCEDIMIENTO, SANCIONES Y DERECHOS HUMANOS EN LA JIOC',
-  'Los límites de ka JIOC en la administración de justicia, derechos fundamentales, normativa internacional sobre DD HH. COMPETENCIAS: Identificar los límites en la aplicación de sus procedimientos propios',
-  ''
+  'FUENTES DEL DERECHO PROPIO',
+  'Reconstrucción del derecho propio indígena mediante fuentes ancestrales como la iconografía, el idioma y el territorio. Se fundamenta en el paradigma del Vivir Bien y la lógica de reciprocidad. Esta visión biótica y paritaria de los pueblos indígenas y su contraste con el modelo mecanicista y extractivista occidental',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   5,
-  'AUTORIDADES ORIGINARIAS, TERRITORIALIDAD, PRINCIPIOS DE LA DEMOCRACIA COMUNITARIA Y SU RECONSTITUCIÓN',
-  'Estructura política y territorial indígena. Legitimidad de autoridades. El territorio como fundamento jurisdiccional. COMPETENCIAS: Reconoce la organización territorial y jerárquica de la justicia propia.',
-  ''
+  'PROTOCOLO DE ACTUACIÓN INTERCULTURAL DE LAS JUEZAS Y JUECES, EN EL MARCO DEL PLURALISMO JURÍDICO IGUALITARIO',
+  'Protocolo de Actuación Intercultural para autoridades judiciales en Bolivia, sustentado en el pluralismo jurídico igualitario y la jerarquía equivalente entre sistemas.Lineamientos de coordinación y cooperación con la justicia indígena para respetar su libre determinación, normas y procedimientos propios. Garantizar el acceso a una justicia plural que proteja los derechos humanos bajo el marco constitucional y tratados internacionales ',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   6,
-  'ANÁLISIS DE LA LEY DE DESLINDE JURISDICCIONAL. CONFLICTO DE COMPETENCIAS.',
-  'Marco constitucional. Contenido central de la Ley de Deslinde Jurisdiccional. Ámbitos de competencia. Elementos técnicos del deslinde. Conflicto de competencias. Tipología del conflicto. Procedimiento de resolución del conflicto. COMPETENCIAS: Ser capaz de identificar y desglosar los elementos estructurales de la Ley de Deslinde Jurisdiccional.',
-  ''
+  'JUSTICIA CONSTITUCIONAL PLURAL',
+  'Análisis del pluralismo jurídico boliviano y la igualdad jerárquica entre la justicia ordinaria e indígena. Coordinación intercultural ante el Tribunal Constitucional Plurinacional y el uso de garantías constitucionales para asegurar la protección de derechos fundamentales y colectivo ',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   7,
-  'PROCEDIMIENTOS DE LA JUSTICIA INDÍGENA',
-  'Etapas del proceso índigena. Investigación comunitaria. Asambleas y deliberación. COMPETENCIAS: Conducir procesos de manera oral, pública y comunitaria.',
-  ''
+  'Lineamientos para la Coordinación y Cooperación entre la Justicia Ordinaria y la JIOC ',
+  'Igualdad jerárquica entre los sistemas jurídicos ordinario e indígena y define mecanismos específicos de coordinación y cooperación interjurisdiccional. Respeto a la libre determinación de los pueblos y la protección efectiva de los derechos humanos y garantías constitucionales ',
+  'https://www.youtube.com/embed/'
 );
+
+
+
+
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   8,
-  'JUSTICIA CONSTITUCIONAL PLURAL',
-  '¿Qué es la justicia constitucional plural? Competencias y funciones de la justicia. Relación con la jurisdicción indígena. COMPETENCIAS: Analítico - Constitucional, interpretativa intercultural, asignación de competencias, jurisprudencia y crítica.',
-  ''
+  'PLURALISMO JURÍDICO Y MARCO CONSTITUCIONAL',
+  'Comprende cómo coexisten los sistemas de justicia indígena y ordinaria dentro del marco constitucional boliviano, promoviendo el respeto a la diversidad cultural y jurídica.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   9,
-  'COMPETENCIA JURISDICCIONAL Y CASOS APLICABLES',
-  'Criterios: territorial, personal y material. Delitos y conflictos típicos. Limitaciones según Ley 073. COMPETENCIAS: Determina que casos corresponden o no a la JIOC.',
-  ''
+  'LA COSA JUZGADA Y MECANISMOS DE EJECUCIÓN DE LA SENTENCIA DE JIOC (PARTE 1)',
+  'Pluralismo jurídico y la Jurisdicción Indígena Originaria Campesina (JIOC) como sistemas con igualdad jerárquica, autonomía y normas propias. Define la naturaleza de sus sentencias, los diversos tipos de sanciones restaurativas y los requisitos conceptuales para que una resolución alcance la calidad de cosa juzgada ',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   10,
-  'ANÁLISIS DE SENTENCIAS CONSTITUCIONALES',
-  'Criterios técnicos para leer,descomponer y analizar sentencias constitucionales, identificando estructura, razonamiento, jurisprudencia aplicada y efectos jurídicos. COMPETENCIAS: Poder identificar y formular problemas constitucionales, ubicar cada parte de una sentencia.',
-  ''
+  'LA COSA JUZGADA Y MECANISMOS DE EJECUCIÓN DE LA SENTENCIA DE JIOC (PARTE 2)',
+  'Cosa juzgada en el ámbito indígena y los mecanismos para asegurar la ejecución de sentencias, ya sea por cumplimiento voluntario o apoyo estatal. Incluye jurisprudencia del Tribunal Constitucional Plurinacional y de la Corte IDH que respalda la obligatoriedad de estas decisiones y el respeto a la libre determinación de los pueblos',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   11,
-  'TIPOS DE SANCIONES INDÍGENAS',
-  'Sanciones materiales, morales, comunitarias y rituales. Límites constitucionales. COMPETENCIAS: Aplicar sanciones adecuadas, legítimas y no vulnerables.',
-  ''
+  'TRIBUNAL CONSTITUCIONAL Y LA JUSTICIA INDÍGENA',
+  'Analiza el papel del Tribunal Constitucional Plurinacional en la protección, interpretación y coordinación de la Justicia Indígena Originaria Campesina dentro del Estado boliviano.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   12,
-  'MECANISMOS DE ARMONIZACIÓN Y PANPACHAÑA',
-  'Reparación del daño. Armonización ritual y comunitaria. Equilibrio como eje de la justicia ancestral. COMPETENCIAS: Gestiona procesos de reconciliación comunitaria.',
-  ''
+  'FUENTES DEL DERECHO INDÍGENA NORMAS, USO, PRÁCTICAS Y COSTUMBRES',
+  'Explora las principales fuentes del derecho indígena, basadas en normas comunitarias, usos, prácticas y costumbres ancestrales que regulan la convivencia, la resolución de conflictos y la organización dentro de las comunidades indígenas originarias campesinas.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   13,
-  'COORDINACIÓN ENTRE JURISDICCIONES',
-  'Igual jerarquía de jurisdicciones. Derivación y coordinación de casos. Jurisprudencia relevante. COMPETENCIAS: Coordinar adecuadamente con justicia ordinaria cuando corresponde.',
-  ''
+  'ESTUDIO DE CASOS REALES',
+  'Analiza situaciones reales relacionadas con la Justicia Indígena Originaria Campesina, permitiendo comprender cómo se aplican los principios, normas y procedimientos comunitarios en contextos actuales y en la resolución de conflictos dentro de las comunidades.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   14,
-  'MECANISMO DE EJECUCIÓN DE SENTENCIAS DE LA JIOC',
-  'Naturaleza de las sentencias de la JIOC, coordinacion con el sistema de justicia estatal, Mecanismos de control y supervición. COMPETENCIAS: Poder identificar y explicar los mecanismos internos y externos de ejecución de sentencias de la JIOC.',
-  ''
+  'PROCEDIMIENTOS DE LA JUSTICIA INDÍGENA',
+  'Conoce los procedimientos y mecanismos utilizados en la Justicia Indígena Originaria Campesina para la resolución de conflictos, la toma de decisiones comunitarias y la aplicación de sanciones basadas en el diálogo, la reparación y el respeto a las normas ancestrales.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   15,
-  'RESOLUCIÓN DE CONFLICTOS INTERCOMUNITARIOS',
-  'Conflictos por límites, recursos y autoridades. Mecanismos de intervención y mediación indígena. COMPETENCIAS: Resuelve disputas entre comunidades con métodos propios.',
-  ''
+  'LITIGIO ESTRATÉGICO EN EL ÁMBITO INTERNACIONAL',
+  'Estudia las estrategias jurídicas utilizadas en el ámbito internacional para la defensa y protección de los derechos de los pueblos indígenas, mediante el uso de mecanismos legales, tratados internacionales y organismos de derechos humanos.',
+  'https://www.youtube.com/embed/'
 );
+
+
+
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   16,
-  'LITIGIO ESTRATÉGICO EN EL ÁMBITO INTERNACIONAL',
-  'Como interponer denuncias ante la Corte Interamericana de Derechos Humanos, Comisión Interamericana de Derechos Humanos.',
-  ''
+  'LA MINERIA Y LOS PUEBLOS INDIGENAS',
+  'Analiza el impacto de la actividad minera en los pueblos indígenas, abordando temas relacionados con los derechos territoriales, la consulta previa, la protección del medio ambiente y la defensa de los recursos naturales dentro de las comunidades.',
+  'https://www.youtube.com/embed/'
 );
 
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   17,
-  'ESTUDIO DE CASOS REALES',
-  'Análisis de casos emblemáticos. Procesos disciplinarios comunitarios. Debate y evaluación crítica. COMPETENCIAS: Aplica el análisis jurídico crítico en contextos reales.',
-  ''
+  'CATASTRO RURAL - INRA',
+  'Comprende los procesos de catastro rural y saneamiento de tierras desarrollados por el INRA, así como su importancia en la seguridad jurídica, la delimitación territorial y el reconocimiento de los derechos de propiedad de comunidades y pueblos indígenas.',
+  'https://www.youtube.com/embed/'
 );
+
+
+
+
+
 INSERT INTO topics (topic_order, title, description, video_url)
 VALUES (
   18,

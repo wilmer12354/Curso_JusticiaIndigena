@@ -2,13 +2,13 @@
 
 ## Descripción del problema
 
-El curso tiene un costo de **420 Bs** y se quiere ofrecer la opción de pagar en **3 cuotas de 140 Bs** (o de una sola vez). Cada cuota desbloquea un bloque de **8 temas**:
+El curso tiene un costo de **420 Bs** y se quiere ofrecer la opción de pagar en **3 cuotas de 140 Bs** (o de una sola vez). Cada cuota desbloquea un bloque de temas:
 
 | Cuota | Monto | Temas desbloqueados |
 |-------|-------|---------------------|
-| 1ª    | 140 Bs | Temas 1–8   |
-| 2ª    | 140 Bs | Temas 9–16  |
-| 3ª    | 140 Bs | Temas 17–21 |
+| 1ª    | 140 Bs | Temas 1–7   |
+| 2ª    | 140 Bs | Temas 8–15  |
+| 3ª    | 140 Bs | Temas 16–21 |
 | Todo  | 420 Bs | Temas 1–21  |
 
 El flujo es:

@@ -67,6 +67,10 @@ export default function TopicDetailPage() {
   const [paymentRequested, setPaymentRequested] = useState(false);
   const [canEnroll, setCanEnroll] = useState(false);
   const [needsEnrollment, setNeedsEnrollment] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState<Set<string>>(new Set());
   const answeredCount = examQuestions.filter((question) => selectedAnswers[question.id]).length;
   const isExamComplete = examQuestions.length > 0 && answeredCount === examQuestions.length;
 
@@ -168,6 +172,9 @@ export default function TopicDetailPage() {
     setSubmitError("");
     setExamResult(null);
     setShowExam(true);
+    setShowFeedback(false);
+    setFeedbackSubmitted(false);
+    setSelectedFeedback(new Set());
   };
 
   const getPaymentCuotaForTopic = (order: number) => {
@@ -300,6 +307,37 @@ export default function TopicDetailPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!student || selectedFeedback.size === 0) return;
+    setSubmittingFeedback(true);
+    try {
+      const res = await fetch("/api/user-feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: student.id, options: Array.from(selectedFeedback) }),
+      });
+      if (res.ok) {
+        setFeedbackSubmitted(true);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
+  const toggleFeedbackOption = (option: string) => {
+    setSelectedFeedback((prev) => {
+      const next = new Set(prev);
+      if (next.has(option)) {
+        next.delete(option);
+      } else {
+        next.add(option);
+      }
+      return next;
+    });
   };
 
   if (loading) {
@@ -702,81 +740,181 @@ export default function TopicDetailPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-xl">
             <div className="text-center">
-              {examResult.passed ? (
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 text-green-400">
-                  <CircleCheck className="h-8 w-8" />
+            {showFeedback ? (
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/25 text-primary">
+                  <GraduationCap className="h-8 w-8" />
                 </div>
-              ) : (
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20 text-red-400">
-                  <XCircle className="h-8 w-8" />
-                </div>
-              )}
 
-              <h3 className="mb-2 text-2xl font-bold text-white">
-                {examResult.passed ? "¡Aprobaste el tema!" : "No aprobaste aún"}
-              </h3>
+                <h3 className="mb-2 text-2xl font-bold text-white">
+                  ¿Por qué no deseas continuar?
+                </h3>
 
-              <div className="mb-6 space-y-2 text-slate-300">
-                <p className="text-lg">Tu nota: <strong className="text-white">{examResult.score}/100</strong></p>
-                <p>Respuestas correctas: {examResult.correctAnswers} de {examResult.totalQuestions}</p>
-                {isTrialMode ? (
-                  <p className="text-sm text-amber-400 mt-2">
-                    {canEnroll
-                      ? "Ya puedes inscribirte y elegir tu plan de pago para continuar con todos los temas."
-                      : "Tras este intento podrás inscribirte para acceder al curso completo."}
-                  </p>
-                ) : examResult.passed ? (
-                  <p className="text-sm text-green-400 mt-2">¡Felicidades! Has desbloqueado el siguiente contenido.</p>
-                ) : (
-                  <p className="text-sm text-red-400 mt-2">Puedes intentarlo nuevamente con otras preguntas.</p>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {isTrialMode && canEnroll && (
-                  <Link
-                    href="/register"
-                    className="btn w-full bg-green-600 hover:bg-green-500 text-white border-none py-3 inline-flex items-center justify-center gap-2"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    Continuar e inscribirme
-                  </Link>
-                )}
-                {isTrialMode ? (
-                  <button
-                    onClick={() => router.push("/courses")}
-                    className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3"
-                  >
-                    Volver a mis cursos
-                  </button>
-                ) : examResult.passed ? (
-                  <button
-                    onClick={() => router.push("/courses")}
-                    className="btn w-full bg-green-600 hover:bg-green-500 text-white border-none py-3"
-                  >
-                    Vamos al siguiente tema
-                  </button>
-                ) : progress?.blocked ? (
-                  <div className="space-y-3">
-                    <p className="text-sm text-red-400 text-center">
-                      Has agotado tus 3 intentos. Escribe al administrador para desbloquear este tema.
+                {feedbackSubmitted ? (
+                  <div className="space-y-4">
+                    <p className="text-slate-300 text-sm mt-3 leading-relaxed">
+                      ¡Muchas gracias por tu opinión! Nos ayuda a mejorar el curso constantemente.
                     </p>
                     <button
                       onClick={() => router.push("/courses")}
-                      className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3"
+                      className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3 mt-4"
                     >
-                      Volver a cursos
+                      Volver a mis cursos
                     </button>
                   </div>
                 ) : (
-                  <button
-                    onClick={() => startExam(examQuestions.map((q) => q.id))}
-                    className="btn w-full bg-primary hover:bg-primary/90 text-white border-none py-3"
-                  >
-                    Reintentar
-                  </button>
+                  <div className="space-y-4">
+                    <p className="text-slate-400 text-sm mb-1 leading-relaxed">
+                      Cuéntanos la razón para poder brindarte una mejor experiencia:
+                    </p>
+                    <p className="text-xs text-slate-500 mb-3">Puedes elegir más de una opción.</p>
+                    <div className="flex flex-col gap-2">
+                      {[
+                        "Es muy caro",
+                        "Es muy difícil",
+                        "Es muy fácil",
+                        "Falta de tiempo",
+                        "No me interesa",
+                        "Lo pensaré más adelante",
+                      ].map((option) => {
+                        const checked = selectedFeedback.has(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            disabled={submittingFeedback}
+                            onClick={() => toggleFeedbackOption(option)}
+                            className={`w-full py-2.5 px-4 rounded-xl border text-sm transition-all text-left flex items-center gap-3 ${
+                              checked
+                                ? "bg-primary/15 border-primary/50 text-white"
+                                : "bg-white/5 border-white/10 hover:bg-white/10 text-slate-300"
+                            }`}
+                          >
+                            <span
+                              className={`h-4 w-4 flex-shrink-0 rounded border flex items-center justify-center transition-all ${
+                                checked ? "bg-primary border-primary" : "border-slate-600"
+                              }`}
+                            >
+                              {checked && (
+                                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
+                                  <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              )}
+                            </span>
+                            <span>{option}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      onClick={handleSubmitFeedback}
+                      disabled={submittingFeedback || selectedFeedback.size === 0}
+                      className={`btn w-full py-3 mt-1 ${
+                        submittingFeedback || selectedFeedback.size === 0
+                          ? "bg-slate-700 text-slate-500 cursor-not-allowed opacity-60"
+                          : "bg-primary hover:bg-primary/90 text-white"
+                      }`}
+                    >
+                      {submittingFeedback ? "Enviando..." : `Enviar feedback${selectedFeedback.size > 0 ? ` (${selectedFeedback.size})` : ""}`}
+                    </button>
+                    <button
+                      onClick={() => { setShowFeedback(false); setSelectedFeedback(new Set()); }}
+                      className="btn w-full bg-transparent border border-white/10 hover:bg-white/5 text-slate-400 py-2.5"
+                    >
+                      Volver atrás
+                    </button>
+                  </div>
                 )}
               </div>
+            ) : (
+              <div className="text-center">
+                {examResult.passed ? (
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 text-green-400">
+                    <CircleCheck className="h-8 w-8" />
+                  </div>
+                ) : (
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20 text-red-400">
+                    <XCircle className="h-8 w-8" />
+                  </div>
+                )}
+
+                <h3 className="mb-2 text-2xl font-bold text-white">
+                  {examResult.passed ? "¡Aprobaste el tema!" : "No aprobaste aún"}
+                </h3>
+
+                <div className="mb-6 space-y-2 text-slate-300">
+                  <p className="text-lg">Tu nota: <strong className="text-white">{examResult.score}/100</strong></p>
+                  <p>Respuestas correctas: {examResult.correctAnswers} de {examResult.totalQuestions}</p>
+                  {isTrialMode ? (
+                    <p className="text-sm text-amber-400 mt-2">
+                      {canEnroll
+                        ? "Ya puedes inscribirte y elegir tu plan de pago para continuar con todos los temas."
+                        : "Tras este intento podrás inscribirte para acceder al curso completo."}
+                    </p>
+                  ) : examResult.passed ? (
+                    <p className="text-sm text-green-400 mt-2">¡Felicidades! Has desbloqueado el siguiente contenido.</p>
+                  ) : (
+                    <p className="text-sm text-red-400 mt-2">Puedes intentarlo nuevamente con otras preguntas.</p>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  {isTrialMode && canEnroll && (
+                    <Link
+                      href="/register"
+                      className="btn w-full bg-green-600 hover:bg-green-500 text-white border-none py-3 inline-flex items-center justify-center gap-2"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Continuar e inscribirme
+                    </Link>
+                  )}
+                  {isTrialMode ? (
+                    <>
+                      <button
+                        onClick={() => router.push("/courses")}
+                        className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3"
+                      >
+                        Volver a mis cursos
+                      </button>
+                      {canEnroll && (
+                        <button
+                          onClick={() => setShowFeedback(true)}
+                          className="btn w-full bg-transparent border border-white/10 hover:bg-white/5 text-slate-400 py-3"
+                        >
+                          No, no quiero
+                        </button>
+                      )}
+                    </>
+                  ) : examResult.passed ? (
+                    <button
+                      onClick={() => router.push("/courses")}
+                      className="btn w-full bg-green-600 hover:bg-green-500 text-white border-none py-3"
+                    >
+                      Vamos al siguiente tema
+                    </button>
+                  ) : progress?.blocked ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-red-400 text-center">
+                        Has agotado tus 3 intentos. Escribe al administrador para desbloquear este tema.
+                      </p>
+                      <button
+                        onClick={() => router.push("/courses")}
+                        className="btn w-full bg-slate-600 hover:bg-slate-500 text-white border-none py-3"
+                      >
+                        Volver a cursos
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startExam(examQuestions.map((q) => q.id))}
+                      className="btn w-full bg-primary hover:bg-primary/90 text-white border-none py-3"
+                    >
+                      Reintentar
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
             </div>
           </div>
         </div>

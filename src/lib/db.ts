@@ -63,9 +63,11 @@ export async function initDb() {
     "ALTER TABLE payments ADD COLUMN payment_receipt TEXT",
     "ALTER TABLE progress ADD COLUMN blocked INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN trial_exam_done INTEGER DEFAULT 0",
+    // Recreate trial_feedback with the new single-row-per-user schema
+    "DROP TABLE IF EXISTS trial_feedback",
   ];
   for (const sql of migrations) {
-    try { await db.execute(sql); } catch { /* column already exists */ }
+    try { await db.execute(sql); } catch { /* already applied */ }
   }
 
   usersInitialized = true;
@@ -176,5 +178,13 @@ export async function ensureCourseTables() {
     );
   `);
 
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS trial_feedback (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id     TEXT NOT NULL UNIQUE,
+      options     TEXT NOT NULL,
+      created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
   courseTablesInitialized = true;
 }

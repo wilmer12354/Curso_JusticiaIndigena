@@ -10,7 +10,7 @@ const PASSING_SCORE = 70;
 async function getUnlockedUntil(userId: string, status: string | null, paymentMaxTopic: number) {
   const progressResult = await db.execute({
     sql: `
-      SELECT topic_order, passed
+      SELECT topic_order, score, attempts, passed, completed_at, blocked
       FROM progress
       WHERE user_id = ?
     `,

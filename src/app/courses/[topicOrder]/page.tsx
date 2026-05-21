@@ -476,6 +476,12 @@ export default function TopicDetailPage() {
                 Aprobado
               </span>
             )}
+            {progress?.blocked && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400">
+                <XCircle className="w-4 h-4" />
+                Reprobado
+              </span>
+            )}
           </div>
 
           <h1 className="text-4xl font-bold mb-4">{topic.title}</h1>
@@ -483,7 +489,7 @@ export default function TopicDetailPage() {
             {topic.description || "En esta pagina solo se muestra el contenido correspondiente al tema seleccionado."}
           </p>
 
-          <Link href={`/courses/${topic.topicOrder}/docs`} className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20">
+          <Link href={`/courses/${topic.topicOrder}/docs`} className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/20 transition-colors border border-primary/20 btn-primary">
             <FileText className="w-4 h-4" />
             Ver Documentación
           </Link>
@@ -499,7 +505,9 @@ export default function TopicDetailPage() {
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs uppercase tracking-wider text-slate-500 mb-2">Estado</p>
-              <p className="text-2xl font-bold">{progress?.passed ? "Completado" : "En curso"}</p>
+              <p className="text-2xl font-bold">
+                {progress?.passed ? "Aprobado" : progress?.blocked ? "Reprobado" : "En curso"}
+              </p>
             </div>
           </div>
         </section>
@@ -553,20 +561,32 @@ export default function TopicDetailPage() {
               </div>
             ) : !showExam ? (
               <div className="space-y-4">
-                <p className="text-slate-400">
-                  Cuando te sientas preparado, inicia el examen para responder las preguntas de este tema.
-                </p>
-                <button
-                  onClick={() => startExam()}
-                  className="btn btn-primary w-full"
-                  disabled={questions.length === 0}
-                >
-                  Ya estoy listo para mi examen
-                </button>
-                {questions.length === 0 && (
-                  <p className="text-sm text-slate-500">
-                    Todavia no hay preguntas registradas para este tema.
-                  </p>
+                {progress?.passed ? (
+                  <div className="rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center">
+                    <CircleCheck className="mx-auto h-10 w-10 text-green-400 mb-2" />
+                    <p className="font-semibold text-green-300">¡Ya aprobaste este tema!</p>
+                    <p className="text-sm text-green-400/80 mt-1">
+                      Has completado este tema con éxito. Puedes avanzar al siguiente contenido.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-slate-400">
+                      Cuando te sientas preparado, inicia el examen para responder las preguntas de este tema.
+                    </p>
+                    <button
+                      onClick={() => startExam()}
+                      className="btn btn-primary w-full"
+                      disabled={questions.length === 0}
+                    >
+                      Ya estoy listo para mi examen
+                    </button>
+                    {questions.length === 0 && (
+                      <p className="text-sm text-slate-500">
+                        Todavia no hay preguntas registradas para este tema.
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             ) : (

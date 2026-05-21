@@ -4,11 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-<<<<<<< HEAD
-import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus } from "lucide-react";
-=======
-import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, Download } from "lucide-react";
->>>>>>> 386ecfd90780223df32c9f3aa69e2c91ba2592bb
+import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus, Download } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
 

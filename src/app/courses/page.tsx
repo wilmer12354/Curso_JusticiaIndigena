@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase";
 import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2, Sparkles, Download } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "../components/LogoutButton";
+import { MODULOS, MAX_TOPIC } from "@/lib/modulos";
 
 type StudentUser = {
   id: string;
@@ -39,17 +40,12 @@ type Payment = {
   status: string;
 };
 
-const CUOTA_LABELS: Record<number, string> = {
-  1: "1ª cuota (Temas 1–7)",
-  2: "2ª cuota (Temas 8–14)",
-  3: "3ª cuota (Temas 15–21)",
-};
-
-const MONTHS = [
-  { label: "MÓDULO I", min: 1, max: 7 },
-  { label: "MÓDULO II", min: 8, max: 14 },
-  { label: "MÓDULO III", min: 15, max: 21 },
-];
+const CUOTA_LABELS: Record<number, string> = Object.fromEntries(
+  MODULOS.map((m, i) => {
+    const last = i < MODULOS.length - 1 ? MODULOS[i + 1].min - 1 : MAX_TOPIC;
+    return [i + 1, `${i + 1}ª cuota (Temas ${m.min}–${last})`];
+  })
+);
 
 export default function CoursesPage() {
   const router = useRouter();
@@ -634,7 +630,7 @@ export default function CoursesPage() {
               </div>
             )}
 
-            {MONTHS.map((month) => {
+            {MODULOS.map((month) => {
               const monthTopics = topics.filter((t) => t.topicOrder >= month.min && t.topicOrder <= month.max);
               if (monthTopics.length === 0) return null;
               return (

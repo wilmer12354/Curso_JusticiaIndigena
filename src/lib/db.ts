@@ -1,4 +1,5 @@
 import { createClient } from "@libsql/client";
+import { CUOTA_MAX_TOPIC } from "./modulos";
 
 const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -103,9 +104,9 @@ export async function getPaymentMaxTopic(userId: string): Promise<number> {
 
   const approvedCuotas = new Set(result.rows.map((r) => Number(r.cuota)));
 
-  if (approvedCuotas.has(3) || approvedCuotas.size === 3) return 999; // All topics
-  if (approvedCuotas.has(2)) return 14;
-  if (approvedCuotas.has(1)) return 7;
+  if (approvedCuotas.has(3) || approvedCuotas.size === 3) return CUOTA_MAX_TOPIC[3];
+  if (approvedCuotas.has(2)) return CUOTA_MAX_TOPIC[2];
+  if (approvedCuotas.has(1)) return CUOTA_MAX_TOPIC[1];
   return 0;
 }
 

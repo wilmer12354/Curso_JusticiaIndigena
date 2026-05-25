@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, initDb } from "@/lib/db";
+import { verifyAdminRequest } from "@/lib/verify-admin";
 
 // GET all students (with status)
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const unauthorized = await verifyAdminRequest(req);
+    if (unauthorized) return unauthorized;
+
     await initDb();
     const result = await db.execute(
       "SELECT * FROM users WHERE role = 'student' ORDER BY created_at DESC"
@@ -37,6 +41,9 @@ export async function GET() {
 // POST create user
 export async function POST(req: NextRequest) {
   try {
+    const unauthorized = await verifyAdminRequest(req);
+    if (unauthorized) return unauthorized;
+
     await initDb();
     const { id, name, email, image, role, status } = await req.json();
     if (!id || !email) {

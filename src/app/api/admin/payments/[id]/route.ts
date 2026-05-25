@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, initDb } from "@/lib/db";
+import { verifyAdminRequest } from "@/lib/verify-admin";
 
 // PATCH /api/admin/payments/[id]  { status: 'aprobado' | 'rechazado' }
 export async function PATCH(
@@ -7,6 +8,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const unauthorized = await verifyAdminRequest(req);
+    if (unauthorized) return unauthorized;
+
     await initDb();
     const { id } = await params;
     const body = await req.json();

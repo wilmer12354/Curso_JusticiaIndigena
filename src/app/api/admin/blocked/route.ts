@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db, initDb, ensureCourseTables } from "@/lib/db";
+import { verifyAdminRequest } from "@/lib/verify-admin";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const unauthorized = await verifyAdminRequest(req);
+    if (unauthorized) return unauthorized;
+
     await initDb();
     await ensureCourseTables();
 

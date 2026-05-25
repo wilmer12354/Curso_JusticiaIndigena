@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, initDb } from "@/lib/db";
+import { verifyAdminRequest } from "@/lib/verify-admin";
 
 export async function POST(req: NextRequest) {
   try {
+    const unauthorized = await verifyAdminRequest(req);
+    if (unauthorized) return unauthorized;
+
     await initDb();
 
     const { userId, topicOrder } = await req.json();

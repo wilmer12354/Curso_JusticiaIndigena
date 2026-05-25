@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureCourseTables, initDb } from "@/lib/db";
+import { verifyAdminRequest } from "@/lib/verify-admin";
 
 // PATCH update user (name, email, role, image, status)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const unauthorized = await verifyAdminRequest(req);
+    if (unauthorized) return unauthorized;
+
     await initDb();
     const body = await req.json();
     const { name, email, role, image, status } = body;
@@ -52,8 +56,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 // DELETE user
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const unauthorized = await verifyAdminRequest(req);
+    if (unauthorized) return unauthorized;
+
     await initDb();
     const { id } = await params;
     await db.execute({

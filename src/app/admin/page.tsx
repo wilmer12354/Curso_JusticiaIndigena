@@ -117,11 +117,22 @@ export default function AdminDashboard() {
     return () => unsubscribe();
   }, [router]);
 
+  const adminFetch = async (url: string, options?: RequestInit) => {
+    const token = await auth.currentUser?.getIdToken();
+    return fetch(url, {
+      ...options,
+      headers: {
+        ...(options?.headers as Record<string, string> | undefined),
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  };
+
   // Fetch users
   const fetchUsers = useCallback(async () => {
     setUsersLoading(true);
     try {
-      const res = await fetch("/api/admin/users");
+      const res = await adminFetch("/api/admin/users");
       if (res.ok) setUsers(await res.json());
     } catch { /* ignore */ }
     setUsersLoading(false);
@@ -131,7 +142,7 @@ export default function AdminDashboard() {
   const fetchPayments = useCallback(async () => {
     setPaymentsLoading(true);
     try {
-      const res = await fetch("/api/admin/payments");
+      const res = await adminFetch("/api/admin/payments");
       if (res.ok) setPayments(await res.json());
     } catch { /* ignore */ }
     setPaymentsLoading(false);
@@ -140,7 +151,7 @@ export default function AdminDashboard() {
   const handlePaymentAction = async (paymentId: number, status: "aprobado" | "rechazado") => {
     setProcessingPayment(paymentId);
     try {
-      await fetch(`/api/admin/payments/${paymentId}`, {
+      await adminFetch(`/api/admin/payments/${paymentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -154,7 +165,7 @@ export default function AdminDashboard() {
   const fetchBlocked = useCallback(async () => {
     setBlockedLoading(true);
     try {
-      const res = await fetch("/api/admin/blocked");
+      const res = await adminFetch("/api/admin/blocked");
       if (res.ok) setBlockedTopics(await res.json());
     } catch { /* ignore */ }
     setBlockedLoading(false);
@@ -164,7 +175,7 @@ export default function AdminDashboard() {
     const key = `${userId}-${topicOrder}`;
     setUnblocking(key);
     try {
-      await fetch("/api/admin/unblock-topic", {
+      await adminFetch("/api/admin/unblock-topic", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, topicOrder }),
@@ -225,7 +236,7 @@ export default function AdminDashboard() {
   const handleCreate = async () => {
     if (!form.id || !form.email) { setError("ID y Email son requeridos."); return; }
     setSaving(true);
-    const res = await fetch("/api/admin/users", {
+    const res = await adminFetch("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -237,7 +248,7 @@ export default function AdminDashboard() {
   const handleEdit = async () => {
     if (!selectedUser) return;
     setSaving(true);
-    const res = await fetch(`/api/admin/users/${selectedUser.id}`, {
+    const res = await adminFetch(`/api/admin/users/${selectedUser.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -249,7 +260,7 @@ export default function AdminDashboard() {
   const handleDelete = async () => {
     if (!selectedUser) return;
     setSaving(true);
-    await fetch(`/api/admin/users/${selectedUser.id}`, { method: "DELETE" });
+    await adminFetch(`/api/admin/users/${selectedUser.id}`, { method: "DELETE" });
     setSaving(false);
     closeModal();
     fetchUsers();
@@ -259,7 +270,7 @@ export default function AdminDashboard() {
   const handleActivate = async (userId: string) => {
     setActivating(userId);
     try {
-      await fetch(`/api/admin/users/${userId}`, {
+      await adminFetch(`/api/admin/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "activo" }),

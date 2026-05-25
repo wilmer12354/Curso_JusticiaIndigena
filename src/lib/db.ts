@@ -63,8 +63,6 @@ export async function initDb() {
     "ALTER TABLE payments ADD COLUMN payment_receipt TEXT",
     "ALTER TABLE progress ADD COLUMN blocked INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN trial_exam_done INTEGER DEFAULT 0",
-    // Recreate trial_feedback with the new single-row-per-user schema
-    "DROP TABLE IF EXISTS trial_feedback",
   ];
   for (const sql of migrations) {
     try { await db.execute(sql); } catch { /* already applied */ }
@@ -106,7 +104,7 @@ export async function getPaymentMaxTopic(userId: string): Promise<number> {
   const approvedCuotas = new Set(result.rows.map((r) => Number(r.cuota)));
 
   if (approvedCuotas.has(3) || approvedCuotas.size === 3) return 999; // All topics
-  if (approvedCuotas.has(2)) return 15;
+  if (approvedCuotas.has(2)) return 14;
   if (approvedCuotas.has(1)) return 7;
   return 0;
 }

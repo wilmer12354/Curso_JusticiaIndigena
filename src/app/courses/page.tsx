@@ -41,9 +41,15 @@ type Payment = {
 
 const CUOTA_LABELS: Record<number, string> = {
   1: "1ª cuota (Temas 1–7)",
-  2: "2ª cuota (Temas 8–15)",
-  3: "3ª cuota (Temas 16–21)",
+  2: "2ª cuota (Temas 8–14)",
+  3: "3ª cuota (Temas 15–21)",
 };
+
+const MONTHS = [
+  { label: "MÓDULO I", min: 1, max: 7 },
+  { label: "MÓDULO II", min: 8, max: 14 },
+  { label: "MÓDULO III", min: 15, max: 21 },
+];
 
 export default function CoursesPage() {
   const router = useRouter();
@@ -628,90 +634,103 @@ export default function CoursesPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {topics.map((topic) => (
-                <div
-                  key={topic.id}
-                  className={`glass-card flex flex-col gap-6 transition-all ${topic.unlocked ? "group hover:border-primary/40" : "opacity-80 border-white/5"
-                    }`}
-                >
-                  <div className="aspect-video rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden relative">
-                    {topic.paymentBlocked ? (
-                      <CreditCard className="w-12 h-12 text-indigo-400/60" />
-                    ) : topic.locked ? (
-                      <Lock className="w-12 h-12 text-slate-500" />
-                    ) : topic.passed ? (
-                      <CheckCircle2 className="w-12 h-12 text-green-400" />
-                    ) : (
-                      <Book className="w-12 h-12 text-slate-700" />
-                    )}
-                    <div className="absolute top-3 left-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
-                      Tema {topic.topicOrder}
-                    </div>
-                    {(topic.paymentBlocked || topic.trialLocked) && (
-                      <div className="absolute bottom-3 left-3 right-3 rounded-lg bg-black/70 px-2 py-1 text-xs text-indigo-300 text-center font-semibold">
-                        {topic.trialLocked ? "Inscríbete para desbloquear" : "Requiere pago"}
-                      </div>
-                    )}
+            {MONTHS.map((month) => {
+              const monthTopics = topics.filter((t) => t.topicOrder >= month.min && t.topicOrder <= month.max);
+              if (monthTopics.length === 0) return null;
+              return (
+                <div key={month.label} className="mb-14">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-px flex-1 bg-white/5" />
+                    <h2 className="text-2xl font-bold text-primary">{month.label}</h2>
+                    <div className="h-px flex-1 bg-white/5" />
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {monthTopics.map((topic) => (
+                      <div
+                        key={topic.id}
+                        className={`glass-card flex flex-col gap-6 transition-all ${topic.unlocked ? "group hover:border-primary/40" : "opacity-80 border-white/5"
+                          }`}
+                      >
+                        <div className="aspect-video rounded-xl bg-slate-800 flex items-center justify-center overflow-hidden relative">
+                          {topic.paymentBlocked ? (
+                            <CreditCard className="w-12 h-12 text-indigo-400/60" />
+                          ) : topic.locked ? (
+                            <Lock className="w-12 h-12 text-slate-500" />
+                          ) : topic.passed ? (
+                            <CheckCircle2 className="w-12 h-12 text-green-400" />
+                          ) : (
+                            <Book className="w-12 h-12 text-slate-700" />
+                          )}
+                          <div className="absolute top-3 left-3 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white">
+                            Tema {topic.topicOrder}
+                          </div>
+                          {(topic.paymentBlocked || topic.trialLocked) && (
+                            <div className="absolute bottom-3 left-3 right-3 rounded-lg bg-black/70 px-2 py-1 text-xs text-indigo-300 text-center font-semibold">
+                              {topic.trialLocked ? "Inscríbete para desbloquear" : "Requiere pago"}
+                            </div>
+                          )}
+                        </div>
 
-                  <div>
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
-                      <span className={`px-2 py-0.5 rounded ${topic.blocked
-                          ? "bg-red-500/10 text-red-400"
-                          : topic.unlocked
-                            ? "bg-primary/10 text-primary"
-                            : topic.paymentBlocked || topic.trialLocked
-                              ? "bg-indigo-500/10 text-indigo-400"
-                              : "bg-slate-700/50 text-slate-300"
-                        }`}>
-                        {topic.blocked
-                          ? "Bloqueado"
-                          : topic.unlocked
-                            ? (topic.passed ? "Completado" : "Disponible")
-                            : topic.trialLocked
-                              ? "Tras inscripción"
-                              : topic.paymentBlocked
-                                ? "Requiere pago"
-                                : "Bloqueado"}
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold mb-4">{topic.title}</h3>
+                        <div>
+                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
+                            <span className={`px-2 py-0.5 rounded ${topic.blocked
+                                ? "bg-red-500/10 text-red-400"
+                                : topic.unlocked
+                                  ? "bg-primary/10 text-primary"
+                                  : topic.paymentBlocked || topic.trialLocked
+                                    ? "bg-indigo-500/10 text-indigo-400"
+                                    : "bg-slate-700/50 text-slate-300"
+                              }`}>
+                              {topic.blocked
+                                ? "Bloqueado"
+                                : topic.unlocked
+                                  ? (topic.passed ? "Completado" : "Disponible")
+                                  : topic.trialLocked
+                                    ? "Tras inscripción"
+                                    : topic.paymentBlocked
+                                      ? "Requiere pago"
+                                      : "Bloqueado"}
+                            </span>
+                          </div>
+                          <h3 className="text-xl font-bold mb-4">{topic.title}</h3>
 
-                    <div className="flex flex-col gap-2 text-sm text-slate-400">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        Intentos: {topic.attempts}
+                          <div className="flex flex-col gap-2 text-sm text-slate-400">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              Intentos: {topic.attempts}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Book className="w-4 h-4" />
+                              Puntaje: {topic.score}
+                            </div>
+                          </div>
+
+                          {topic.description && (
+                            <p className="mt-4 text-sm text-slate-400 line-clamp-3">{topic.description}</p>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => (topic.unlocked && !topic.blocked) ? handleContinue(topic.topicOrder) : undefined}
+                          disabled={!topic.unlocked || topic.blocked}
+                          className={`w-full mt-auto ${(topic.unlocked && !topic.blocked) ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
+                        >
+                          {topic.blocked
+                            ? "Contacta al administrador"
+                            : topic.unlocked
+                              ? "Continuar con el curso"
+                              : topic.trialLocked
+                                ? canEnroll ? "Inscríbete para continuar" : "Completa el examen del Tema 1"
+                                : topic.paymentBlocked
+                                  ? "Requiere pago de cuota"
+                                  : "Tema bloqueado"}
+                        </button>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Book className="w-4 h-4" />
-                        Puntaje: {topic.score}
-                      </div>
-                    </div>
-
-                    {topic.description && (
-                      <p className="mt-4 text-sm text-slate-400 line-clamp-3">{topic.description}</p>
-                    )}
+                    ))}
                   </div>
-
-                  <button
-                    onClick={() => (topic.unlocked && !topic.blocked) ? handleContinue(topic.topicOrder) : undefined}
-                    disabled={!topic.unlocked || topic.blocked}
-                    className={`w-full mt-auto ${(topic.unlocked && !topic.blocked) ? "btn btn-primary" : "btn opacity-60 cursor-not-allowed"}`}
-                  >
-                    {topic.blocked
-                      ? "Contacta al administrador"
-                      : topic.unlocked
-                        ? "Continuar con el curso"
-                        : topic.trialLocked
-                          ? canEnroll ? "Inscríbete para continuar" : "Completa el examen del Tema 1"
-                          : topic.paymentBlocked
-                            ? "Requiere pago de cuota"
-                            : "Tema bloqueado"}
-                  </button>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </>
         )}
       </main>

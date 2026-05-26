@@ -15,7 +15,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing user data" }, { status: 400 });
     }
 
-    const isAdmin = email === process.env.ADMIN_EMAIL;
+    const adminEmails = (process.env.ADMIN_EMAIL ?? "").split(",").map((e) => e.trim());
+    const isAdmin = adminEmails.includes(email);
 
     const existingUser = await db.execute({
       sql: "SELECT id, role, status, trial_exam_done FROM users WHERE email = ?",

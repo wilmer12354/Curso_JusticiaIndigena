@@ -80,7 +80,8 @@ export async function POST(request: Request) {
       args: [email],
     });
 
-    const isAdmin = email === process.env.ADMIN_EMAIL;
+    const adminEmails = (process.env.ADMIN_EMAIL ?? "").split(",").map((e) => e.trim());
+    const isAdmin = adminEmails.includes(email);
     const wasExisting = existingUser.rows.length > 0;
     const existingStatus = wasExisting ? String(existingUser.rows[0].status ?? "") : "";
     const isTrialUser = existingStatus === "prueba";

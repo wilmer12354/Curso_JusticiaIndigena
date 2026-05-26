@@ -171,9 +171,9 @@ export function AuthButtons() {
         type="button"
         onClick={handleSignUp}
         disabled={busy}
-        className="text-sm text-slate-400 hover:text-white transition-colors underline-offset-4 hover:underline disabled:opacity-60"
+        className="text-sm text-slate-400 hover:text-white transition-colors underline-offset-4 hover:underline disabled:opacity-60 pt-5"
       >
-        Ya completé la prueba — inscribirme y pagar
+        Ya completé la prueba — inscribirme
       </button>
     </div>
   );

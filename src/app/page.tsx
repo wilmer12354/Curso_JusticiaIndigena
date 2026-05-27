@@ -4,13 +4,14 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Shield, BookOpen, Scale, Users, ChevronDown, Star, Clock, Award } from "lucide-react";
+import { Shield, BookOpen, Scale, Users, ChevronDown, Star, Clock, Award, X, HelpCircle, WifiOff } from "lucide-react";
 import { AuthButtons } from "./components/AuthButtons";
 import anime from "animejs";
 
 export default function LandingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [showHelp, setShowHelp] = useState(false);
   const aboutRef = useRef<HTMLElement>(null);
   const heroBodyRef = useRef<HTMLDivElement>(null);
 
@@ -177,15 +178,30 @@ export default function LandingPage() {
               <span className="text-3xl md:text-4xl font-bold tracking-tight text-slate-400">CEPABOL</span>
             </div>
 
-            <h1 className="max-w-4xl mx-auto text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[8rem] md:mt-[11rem]">
-              <span className="text-white">Escuela de Jueces Naturales</span>
-              <br/>
-              <span className="text-white">Curso: Justicia Indígena</span>
-              <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
-                Originaria Campesina
-              </span>
-            </h1>
+            <div className="relative max-w-4xl mx-auto">
+              <div className="fixed top-36 right-5 z-50 flex flex-col items-end gap-2">
+                <span className="hidden md:inline text-ms text-amber-300 font-medium whitespace-nowrap bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-amber-500/20 shadow-lg">
+                  ¿Tienes problemas con la conectividad de internet? 👇
+                </span>
+                <button
+                  onClick={() => setShowHelp(true)}
+                  className="relative p-3 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 shadow-lg shadow-orange-500/40 hover:scale-110 hover:shadow-xl hover:shadow-orange-500/50 active:scale-95 transition-all duration-300"
+                >
+                  <WifiOff className="w-5 h-5 md:w-6 md:h-6 text-white drop-shadow-sm" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500 animate-ping" />
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500" />
+                </button>
+              </div>
+              <h1 className="text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[8rem] md:mt-[11rem]">
+                <span className="text-white">Escuela de Jueces Naturales</span>
+                <br/>
+                <span className="text-white">Curso: Justicia Indígena</span>
+                <br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
+                  Originaria Campesina
+                </span>
+              </h1>
+            </div>
 
             <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed px-2">
               Explora y fortalece los conocimientos sobre la pluralidad jurídica
@@ -209,6 +225,7 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+
           </div>
 
           {/* Scroll indicator hacia el cuerpo */}
@@ -374,6 +391,7 @@ export default function LandingPage() {
                     </span>
                   ))}
                 </div>
+
               </div>
 
               {/* DERECHA - VIDEO */}
@@ -550,6 +568,67 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── INTERNET HELP MODAL ── */}
+      {showHelp && (
+        <div
+          onClick={() => setShowHelp(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-6"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-lg rounded-2xl border border-white/10 bg-[#111115] p-8 shadow-2xl"
+          >
+            <button
+              onClick={() => setShowHelp(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <HelpCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">
+                ¿Problemas de conexión?
+              </h3>
+            </div>
+
+            <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
+              <p>
+                si tiene dificultad para mantener una conexión estable a internet o no puedes acceder a la plataforma en forma virtual, no te preocupes!
+              </p>
+              <p>
+                Podemos enviarte el contenido del curso mediante <strong className="text-white">USB</strong> 
+                por un medio de transporte (flota), para que puedas estudiar sin la necesidad de estar conectado.
+
+              </p>
+              <p>
+                También puedes consultar cualquier duda que tengas sobre el curso
+                o el proceso de inscripción. Estamos para ayudarte.
+              </p>
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-slate-400 text-xs">
+                  Contáctanos para más información:
+                </p>
+                <p className="text-slate-300 text-sm font-medium mt-1">
+                  WhatsApp: +591 71539769
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowHelp(false)}
+                className="px-5 py-2.5 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary/90 transition-colors"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { put, del } from "@vercel/blob";
 import path from "path";
 
-const MAX_BYTES = 3 * 1024 * 1024;
+const MAX_BYTES = 5.5 * 1024 * 1024;
 
 const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": ".jpg",

@@ -400,9 +400,9 @@ export default function AdminDashboard() {
               {activeSection === "dashboard"
                 ? "Gestiona los contenidos de Justicia Indígena."
                 : activeSection === "pendientes"
-                  ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (140 Bs) solo si el comprobante coincide con ese mes."
+                  ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (120 Bs) solo si el comprobante coincide con ese mes."
                   : activeSection === "pagos"
-                    ? "Cada fila es un mes (140 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
+                    ? "Cada fila es un mes (120 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
                     : activeSection === "bloqueados"
                       ? "Estudiantes que agotaron sus 3 intentos en un tema. Desbloquéalos para que puedan reintentar."
                       : "Visualiza, crea, edita y elimina estudiantes."}
@@ -689,7 +689,7 @@ export default function AdminDashboard() {
                 lineHeight: 1.55,
               }}
             >
-              <strong style={{ color: "#e0e7ff" }}>Importante:</strong> un estudiante puede marcar que pagó 3 meses y solo transferir 140 Bs. Por eso cada mes aparece aparte: solo pulsa Aprobar en el mes que el comprobante respalde (140 Bs por mes aprobado).
+              <strong style={{ color: "#e0e7ff" }}>Importante:</strong> un estudiante puede marcar que pagó 3 meses y solo transferir 120 Bs. Por eso cada mes aparece aparte: solo pulsa Aprobar en el mes que el comprobante respalde (120 Bs por mes aprobado).
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
               <button onClick={fetchPayments} title="Recargar" style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}>

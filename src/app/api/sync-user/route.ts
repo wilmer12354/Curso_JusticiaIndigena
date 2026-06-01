@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, initDb, insertEnrollmentPendingPayments, hasCompletedTrial } from "@/lib/db";
+import { db, initDb, insertEnrollmentPendingPayments } from "@/lib/db";
 import {
   saveRegistrationReceipt,
   deletePublicComprobanteIfExists,
@@ -86,27 +86,10 @@ export async function POST(request: Request) {
     const existingStatus = wasExisting ? String(existingUser.rows[0].status ?? "") : "";
     const isTrialUser = existingStatus === "prueba";
 
-    if (!wasExisting && !isAdmin) {
-      return NextResponse.json(
-        { error: "Primero prueba el Tema 1 gratis con «Probar gratis» en la página principal." },
-        { status: 400 }
-      );
-    }
-
-    if (isTrialUser && !isAdmin) {
-      const trialDone = await hasCompletedTrial(id);
-      if (!trialDone) {
-        return NextResponse.json(
-          { error: "Completa la prueba del Tema 1 antes de inscribirte." },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (isTrialUser && !isAdmin) {
+    if (!isAdmin) {
       if (![1, 2, 3].includes(enrollmentMonths)) {
         return NextResponse.json(
-          { error: "Indica cuántos meses pagaste: 1, 2 o 3 (140 Bs por mes)." },
+          { error: "Indica cuántos meses pagaste: 1, 2 o 3 (120 Bs por mes)." },
           { status: 400 }
         );
       }
@@ -136,7 +119,7 @@ export async function POST(request: Request) {
         }
         if (code === "RECEIPT_TOO_LARGE") {
           return NextResponse.json(
-            { error: "El archivo supera 3 MB." },
+            { error: "El archivo supera 5.5 MB." },
             { status: 413 }
           );
         }
@@ -162,7 +145,7 @@ export async function POST(request: Request) {
         }
         if (code === "PHOTO_TOO_LARGE") {
           return NextResponse.json(
-            { error: "La foto supera 3 MB." },
+            { error: "La foto supera 5.5 MB." },
             { status: 413 }
           );
         }
@@ -251,7 +234,7 @@ export async function POST(request: Request) {
       }
     }
 
-    if (isTrialUser && !isAdmin && [1, 2, 3].includes(enrollmentMonths)) {
+    if (!isAdmin && [1, 2, 3].includes(enrollmentMonths)) {
       await insertEnrollmentPendingPayments(id, enrollmentMonths as 1 | 2 | 3);
     }
 

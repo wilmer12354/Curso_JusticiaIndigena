@@ -189,8 +189,8 @@ export default function CoursesPage() {
       return;
     }
 
-    if (file.size > 3 * 1024 * 1024) {
-      setReceiptError("El comprobante supera 3 MB.");
+    if (file.size > 5.5 * 1024 * 1024) {
+      setReceiptError("El comprobante supera 5.5 MB.");
       setReceiptFile(null);
       return;
     }
@@ -199,8 +199,10 @@ export default function CoursesPage() {
   };
 
   const remainingCuotas = nextCuotaNeeded != null ? 4 - nextCuotaNeeded : 3;
-  const paymentAllAmount = remainingCuotas * 140;
+  const paymentAllAmount = remainingCuotas * 120;
   const payAllLabel = `Pagar todo lo que falta (${paymentAllAmount} Bs)`;
+  const qrNumber = paymentMode === "next" ? 1 : Math.min(remainingCuotas, 3);
+  const qrAmount = qrNumber * 120;
   const canNotifyPayment = hasViewedQr && Boolean(receiptFile) && !requestingCuota;
 
   if (loading || !user) {
@@ -303,7 +305,7 @@ export default function CoursesPage() {
 
   // Payment banner: show when user has completed all unlocked topics and needs next cuota
   const allUnlockedPassed = paymentMaxTopic > 0 && topics
-    .filter((t) => t.topicOrder <= paymentMaxTopic)
+    .filter((t) => t.topicOrder <= paymentMaxTopic && t.topicOrder > 1)
     .every((t) => t.passed);
 
   const showPaymentBanner = nextCuotaNeeded != null && (allUnlockedPassed || paymentMaxTopic === 0);
@@ -362,7 +364,7 @@ export default function CoursesPage() {
               </p>
               <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>
                 {canEnroll
-                  ? "Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de 140 Bs)."
+                  ? "Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de 120 Bs)."
                   : "Mira el video y rinde el examen del Tema 1. Después podrás inscribirte."}
               </p>
             </div>
@@ -422,7 +424,7 @@ export default function CoursesPage() {
               </div>
             </div>
             <div style={{ fontSize: 14, color: "#64748b", flexShrink: 0 }}>
-              Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * 140} / 420 Bs</strong>
+              Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * 120} / 360 Bs</strong>
             </div>
           </div>
         )}
@@ -469,9 +471,7 @@ export default function CoursesPage() {
                   <div style={{ fontWeight: 700, fontSize: 15, color: "#818cf8", marginBottom: 2 }}>
                     {paymentMaxTopic === 0 ? "Paga tu primera cuota para comenzar" : `¡Completaste el bloque! Paga la siguiente cuota`}
                   </div>
-                  <div style={{ fontSize: 13, color: "#94a3b8" }}>
-                    {CUOTA_LABELS[nextCuotaNeeded!]} — 140 Bs. Envía el comprobante de pago al número <strong style={{ color: "#f1f5f9" }}>71539769</strong> y luego haz clic en el botón.
-                  </div>
+                  
                 </>
               )}
               {paymentMessage && (
@@ -553,11 +553,11 @@ export default function CoursesPage() {
             )}
             {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && showQr && (
               <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                <p style={{ marginBottom: 2, fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Escanea este QR para pagar Bs. 140 por la cuota {nextCuotaNeeded}:</p>
-                <img src="/qr_yala.png" alt="Código QR para pago" loading="eager" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
+                <p style={{ marginBottom: 2, fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Escanea este QR para pagar Bs. {qrAmount}{paymentMode === "full" ? ` (${qrNumber} cuotas)` : ` por la cuota ${nextCuotaNeeded}`}:</p>
+                <img src={`/qr_yala${qrNumber}.png`} alt="Código QR para pago" loading="eager" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
                 <a
-                  href="/qr_yala.png"
-                  download={`qr-pago-cuota-${nextCuotaNeeded}.png`}
+                  href={`/qr_yala${qrNumber}.png`}
+                  download={`qr-pago-${qrNumber}-cuota${qrNumber > 1 ? "s" : ""}.png`}
                   className="btn btn-secondary flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
                   style={{ display: "inline-flex", width: "100%", maxWidth: 180, padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
                 >
@@ -579,7 +579,7 @@ export default function CoursesPage() {
           }}>
             <AlertCircle size={16} color="#818cf8" />
             <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>
-              ¿Quieres pagar el curso completo (420 Bs)? Envía el comprobante al <strong style={{ color: "#f1f5f9" }}>71539769</strong> y haz clic en:
+              ¿Quieres pagar el curso completo (360 Bs)? Envía el comprobante al <strong style={{ color: "#f1f5f9" }}>71539769</strong> y haz clic en:
             </span>
             <button
               onClick={() => handleRequestPayment(0)}
@@ -594,7 +594,7 @@ export default function CoursesPage() {
               }}
             >
               <CreditCard size={15} />
-              Pago completo (420 Bs)
+              Pago completo (360 Bs)
             </button>
           </div>
         )}

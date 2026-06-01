@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
+import Swal from "sweetalert2";
 import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload, Download } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-const MAX_RECEIPT_BYTES = 3 * 1024 * 1024;
+const MAX_RECEIPT_BYTES = 5.5 * 1024 * 1024;
 const RECEIPT_ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 const PRICE_PER_MONTH = 120;
 
@@ -41,7 +42,7 @@ export default function RegisterPage() {
   const [certificatePhotoPreviewUrl, setCertificatePhotoPreviewUrl] = useState<string | null>(null);
   const [certificatePhotoError, setCertificatePhotoError] = useState("");
   const [paymentMonths, setPaymentMonths] = useState<PaymentMonths>(1);
-  const [accessCheck, setAccessCheck] = useState<"loading" | "allowed" | "trial_blocked" | "no_account">("loading");
+  const [accessCheck, setAccessCheck] = useState<"loading" | "allowed">("loading");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -58,7 +59,7 @@ export default function RegisterPage() {
         }
         const data = await res.json();
         if (!data.exists) {
-          setAccessCheck("no_account");
+          setAccessCheck("allowed");
           return;
         }
         if (data.role === "admin") {
@@ -66,7 +67,7 @@ export default function RegisterPage() {
           return;
         }
         if (data.status === "prueba" && !data.trialExamDone) {
-          setAccessCheck("trial_blocked");
+          setAccessCheck("allowed");
           return;
         }
         if (data.status === "activo") {
@@ -115,7 +116,7 @@ export default function RegisterPage() {
     }
     if (file.size > MAX_RECEIPT_BYTES) {
       setReceiptFile(null);
-      setReceiptError("El archivo supera 3 MB. Elige una imagen más pequeña o comprime el PDF.");
+      setReceiptError("El archivo supera 5 MB. Elige una imagen más pequeña o comprime el PDF.");
       e.target.value = "";
       return;
     }
@@ -149,7 +150,7 @@ export default function RegisterPage() {
     }
     if (file.size > MAX_RECEIPT_BYTES) {
       setCertificatePhotoFile(null);
-      setCertificatePhotoError("El archivo supera 3 MB. Elige una foto más pequeña.");
+      setCertificatePhotoError("El archivo supera 5 MB. Elige una foto más pequeña.");
       e.target.value = "";
       return;
     }
@@ -194,6 +195,28 @@ export default function RegisterPage() {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
+
+      const trialRes = await fetch(`/api/user-role?email=${encodeURIComponent(user.email!)}`);
+      const trialData = await trialRes.json().catch(() => ({}));
+      const trialIncomplete = !trialData.trialExamDone;
+      if (trialIncomplete) {
+        const { isConfirmed } = await Swal.fire({
+          icon: "question",
+          title: "¿Estás seguro?",
+          text: "Aún no completaste el primer tema gratis. ¿Quieres inscribirte de todas formas?",
+          showCancelButton: true,
+          confirmButtonText: "Sí, inscribirme",
+          cancelButtonText: "Cancelar",
+          background: "#111827",
+          color: "#fff",
+          confirmButtonColor: "#2563eb",
+          cancelButtonColor: "#6b7280",
+        });
+        if (!isConfirmed) {
+          setStep("form");
+          return;
+        }
+      }
 
       const formData = new FormData();
       formData.append("id", user.uid);
@@ -247,34 +270,6 @@ export default function RegisterPage() {
       <div className="min-h-screen flex items-center justify-center register-page">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
-    );
-  }
-
-  if (accessCheck === "no_account") {
-    return (
-      <main className="register-page">
-        <div className="register-container" style={{ maxWidth: 480, margin: "4rem auto", textAlign: "center" }}>
-          <h1 className="register-title mb-4">Primero prueba el curso</h1>
-          <p className="register-subtitle mb-6">
-            Usa «Probar gratis» en la página principal para conocer el Tema 1. Después del examen podrás inscribirte aquí.
-          </p>
-          <Link href="/" className="btn btn-primary">Ir a la página principal</Link>
-        </div>
-      </main>
-    );
-  }
-
-  if (accessCheck === "trial_blocked") {
-    return (
-      <main className="register-page">
-        <div className="register-container" style={{ maxWidth: 480, margin: "4rem auto", textAlign: "center" }}>
-          <h1 className="register-title mb-4">Completa la prueba primero</h1>
-          <p className="register-subtitle mb-6">
-            Debes ver el Tema 1 y rendir su examen antes de inscribirte y pagar.
-          </p>
-          <Link href="/courses/1" className="btn btn-primary">Ir al Tema 1</Link>
-        </div>
-      </main>
     );
   }
 
@@ -454,7 +449,7 @@ export default function RegisterPage() {
                 Foto para tu Certificado *
               </label>
               <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                Esta foto aparecerá en tu certificado. Debe ser formal, preferiblemente con fondo claro y de frente (JPG, PNG o WebP, máx 3MB).
+                Esta foto aparecerá en tu certificado. Debe ser formal, preferiblemente con fondo claro y de frente (JPG, PNG o WebP, máx 5.5MB).
               </p>
               <label className="register-receipt-label">
                 <Upload className="w-5 h-5 text-blue-500 flex-shrink-0" />
@@ -533,8 +528,8 @@ export default function RegisterPage() {
               </p>
               <div className="register-qr-image-wrapper">
                 <Image
-                  src="/qr_yala.png"
-                  alt="Código QR para pago"
+                  src={`/qr_yala${paymentMonths}.png`}
+                  alt={`Código QR para pago de ${totalBs} Bs`}
                   width={220}
                   height={220}
                   priority
@@ -542,8 +537,8 @@ export default function RegisterPage() {
                 />
               </div>
               <a
-                href="/qr_yala.png"
-                download="qr-pago-cepabol.png"
+                href={`/qr_yala${paymentMonths}.png`}
+                download={`qr-pago-cepabol-${paymentMonths}-mes${paymentMonths === 1 ? "" : "es"}.png`}
                 className="btn btn-secondary flex items-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
                 style={{ padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
               >
@@ -597,7 +592,7 @@ export default function RegisterPage() {
                   <Upload className="w-5 h-5 text-amber-500 flex-shrink-0" />
                   <span className="register-receipt-label-text">
                     <span className="font-semibold text-slate-200">Comprobante de pago</span>
-                    <span className="text-xs text-slate-400 block mt-0.5">JPG, PNG, WebP o PDF · máx. 3 MB</span>
+                    <span className="text-xs text-slate-400 block mt-0.5">JPG, PNG, WebP o PDF · máx. 5.5 MB</span>
                   </span>
                   <input
                     type="file"

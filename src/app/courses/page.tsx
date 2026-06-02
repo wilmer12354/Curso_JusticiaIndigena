@@ -554,7 +554,9 @@ export default function CoursesPage() {
             {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && showQr && (
               <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
                 <p style={{ marginBottom: 2, fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Escanea este QR para pagar Bs. {qrAmount}{paymentMode === "full" ? ` (${qrNumber} cuotas)` : ` por la cuota ${nextCuotaNeeded}`}:</p>
-                <img src={`/qr_yala${qrNumber}.png`} alt="Código QR para pago" loading="eager" style={{ width: 180, height: 180, borderRadius: 18, display: "block", margin: "0 auto" }} />
+                <div style={{ width: 180, height: 180, borderRadius: 18, overflow: "hidden" }}>
+                  <img src={`/qr_yala${qrNumber}.png`} alt="Código QR para pago" loading="eager" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                </div>
                 <a
                   href={`/qr_yala${qrNumber}.png`}
                   download={`qr-pago-${qrNumber}-cuota${qrNumber > 1 ? "s" : ""}.png`}

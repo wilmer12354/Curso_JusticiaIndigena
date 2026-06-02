@@ -440,7 +440,9 @@ export default function TopicDetailPage() {
                   <p className="text-sm uppercase tracking-wide text-slate-400 mb-3">Código QR de pago</p>
                   <div className="flex flex-col items-center gap-4">
                     <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
-                      <img src="/qr_yala1.png" alt="Código QR para pago de 120 Bs" loading="eager" className="h-48 w-48 object-contain" />
+                      <div className="h-48 w-48">
+                        <img src="/qr_yala1.png" alt="Código QR para pago de 120 Bs" loading="eager" className="h-full w-full object-contain" />
+                      </div>
                     </div>
                     <a
                       href="/qr_yala1.png"

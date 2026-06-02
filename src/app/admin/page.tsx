@@ -33,6 +33,7 @@ type Payment = {
   userName: string | null;
   userEmail: string | null;
   userImage: string | null;
+  certificatePhoto: string | null;
   paymentReceipt: string | null;
   registrationReceipt: string | null;
 };
@@ -729,8 +730,8 @@ export default function AdminDashboard() {
                       borderRadius: 14, padding: "1.1rem 1.4rem",
                       display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
                     }}>
-                      {p.userImage ? (
-                        <img src={p.userImage} alt={p.userName ?? ""} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(99,102,241,0.3)", flexShrink: 0 }} />
+                      {p.certificatePhoto || p.userImage ? (
+                        <img src={p.certificatePhoto ? (comprobantePublicUrl(p.certificatePhoto) ?? undefined) : p.userImage!} alt={p.userName ?? ""} style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", border: "2px solid rgba(99,102,241,0.3)", flexShrink: 0 }} />
                       ) : (
                         <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, color: "#818cf8", flexShrink: 0 }}>
                           {(p.userName ?? "?")[0]?.toUpperCase()}

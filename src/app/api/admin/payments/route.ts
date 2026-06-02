@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
         u.name AS user_name,
         u.email AS user_email,
         u.image AS user_image,
+        u.certificate_photo AS certificate_photo,
         u.registration_receipt AS registration_receipt
       FROM payments p
       LEFT JOIN users u ON u.id = p.user_id
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
       userName: r.user_name ? String(r.user_name) : null,
       userEmail: r.user_email ? String(r.user_email) : null,
       userImage: r.user_image ? String(r.user_image) : null,
+      certificatePhoto: r.certificate_photo ? String(r.certificate_photo) : null,
       registrationReceipt: r.registration_receipt != null ? String(r.registration_receipt) : null,
     }));
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
 
 import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2, Sparkles, Download } from "lucide-react";
 import Link from "next/link";
@@ -69,60 +70,54 @@ export default function CoursesPage() {
   const [canEnroll, setCanEnroll] = useState(false);
 
   useEffect(() => {
+    const cached = getAuthCache();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser && firebaseUser.email) {
-        try {
-          const res = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
-          if (res.ok) {
-            const data = await res.json();
-            if (!data.exists) {
-              router.push("/");
-              return;
-            }
-            if (data.role === "admin") {
-              router.push("/admin");
+        // Cache hit with same email → redirect immediately (no API)
+        if (cached && cached.email === firebaseUser.email) {
+          if (cached.role === "admin") {
+            router.push("/admin");
+          } else {
+            const cachedStatus = cached.status || "activo";
+            setUser({ id: firebaseUser.uid, name: cached.name || "Estudiante" });
+            setStatus(cachedStatus);
+            if (cachedStatus === "activo" || cachedStatus === "prueba") {
+              setLoading(false);
+              fetchTopics(firebaseUser.uid, cachedStatus);
             } else {
-              const nextStatus = data.status ?? "activo";
-              setUser({ id: firebaseUser.uid, name: data.name || firebaseUser.displayName || "Estudiante" });
-              setStatus(nextStatus);
-
-              if (nextStatus === "activo" || nextStatus === "prueba") {
-                const topicsRes = await fetch(
-                  `/api/course-topics?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(nextStatus)}`
-                );
-
-                if (topicsRes.ok) {
-                  const topicsData = await topicsRes.json();
-                  setTopics(topicsData.topics ?? []);
-                  setCurrentTopic(topicsData.currentTopic ?? null);
-                  setNextCuotaNeeded(topicsData.nextCuotaNeeded ?? null);
-                  setPaymentMaxTopic(topicsData.paymentMaxTopic ?? 0);
-                  setTrialMode(Boolean(topicsData.trialMode));
-                  setTrialExamDone(Boolean(topicsData.trialExamDone));
-                  setCanEnroll(Boolean(topicsData.canEnroll));
-                }
-
-                if (nextStatus === "activo") {
-                  const paymentsRes = await fetch(`/api/payments?userId=${encodeURIComponent(firebaseUser.uid)}`);
-                  if (paymentsRes.ok) {
-                    const paymentsData = await paymentsRes.json();
-                    setPayments(paymentsData.payments ?? []);
-                  }
-                } else {
-                  setPayments([]);
-                }
-              } else {
-                setTopics([]);
-                setCurrentTopic(null);
-                setTrialMode(false);
-                setTrialExamDone(false);
-                setCanEnroll(false);
-              }
-
               setLoading(false);
             }
+          }
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
+          if (!res.ok) { router.push("/"); return; }
+
+          const data = await res.json();
+          if (!data.exists) { router.push("/"); return; }
+          if (data.role === "admin") {
+            setAuthCache({ email: firebaseUser.email!, role: "admin", name: data.name ?? "", status: data.status });
+            router.push("/admin");
+            return;
+          }
+
+          setAuthCache({ email: firebaseUser.email!, role: "student", name: data.name ?? "", status: data.status });
+          const nextStatus = data.status ?? "activo";
+          setUser({ id: firebaseUser.uid, name: data.name || firebaseUser.displayName || "Estudiante" });
+          setStatus(nextStatus);
+
+          if (nextStatus === "activo" || nextStatus === "prueba") {
+            fetchTopics(firebaseUser.uid, nextStatus);
           } else {
-            router.push("/");
+            setTopics([]);
+            setCurrentTopic(null);
+            setTrialMode(false);
+            setTrialExamDone(false);
+            setCanEnroll(false);
+            setPayments([]);
+            setLoading(false);
           }
         } catch {
           router.push("/");
@@ -134,6 +129,33 @@ export default function CoursesPage() {
 
     return () => unsubscribe();
   }, [router]);
+
+  async function fetchTopics(userId: string, status: string) {
+    const [topicsRes, paymentsRes] = await Promise.all([
+      fetch(`/api/course-topics?userId=${encodeURIComponent(userId)}&status=${encodeURIComponent(status)}`),
+      status === "activo"
+        ? fetch(`/api/payments?userId=${encodeURIComponent(userId)}`)
+        : Promise.resolve(null),
+    ]);
+
+    if (topicsRes.ok) {
+      const topicsData = await topicsRes.json();
+      setTopics(topicsData.topics ?? []);
+      setCurrentTopic(topicsData.currentTopic ?? null);
+      setNextCuotaNeeded(topicsData.nextCuotaNeeded ?? null);
+      setPaymentMaxTopic(topicsData.paymentMaxTopic ?? 0);
+      setTrialMode(Boolean(topicsData.trialMode));
+      setTrialExamDone(Boolean(topicsData.trialExamDone));
+      setCanEnroll(Boolean(topicsData.canEnroll));
+    }
+
+    if (paymentsRes) {
+      const paymentsData = await paymentsRes.json();
+      setPayments(paymentsData.payments ?? []);
+    }
+
+    setLoading(false);
+  }
 
   const handleRequestPayment = async (cuota: number) => {
     if (!user || !receiptFile) return;

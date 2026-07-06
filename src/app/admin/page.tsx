@@ -7,6 +7,7 @@ import { auth } from "@/lib/firebase";
 import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon, FileImage, Bell, Banknote, Lock, Unlock } from "lucide-react";
 import { comprobantePublicUrl } from "@/lib/comprobante-public-url";
 import { LogoutButton } from "../components/LogoutButton";
+import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
 
 type User = {
   id: string;
@@ -93,8 +94,21 @@ export default function AdminDashboard() {
 
   // Auth check
   useEffect(() => {
+    const cached = getAuthCache();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser?.email) {
+        // Cache hit: skip API if cached as admin
+        if (cached && cached.email === firebaseUser.email && cached.role === "admin") {
+          setAdminUser({ name: cached.name || firebaseUser.displayName || "Admin" });
+          setLoading(false);
+          return;
+        }
+
+        if (cached && cached.email === firebaseUser.email && cached.role !== "admin") {
+          router.push("/");
+          return;
+        }
+
         try {
           const res = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
           if (res.ok) {
@@ -103,6 +117,7 @@ export default function AdminDashboard() {
               router.push("/");
               return;
             }
+            setAuthCache({ email: firebaseUser.email!, role: "admin", name: data.name ?? "" });
             setAdminUser({ name: data.name || firebaseUser.displayName || "Admin" });
             setLoading(false);
           } else {

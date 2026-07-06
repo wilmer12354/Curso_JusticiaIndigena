@@ -3,12 +3,14 @@
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
+import { clearAuthCache } from "@/lib/auth-cache";
 
 export function LogoutButton() {
   const router = useRouter();
 
   const handleLogout = async () => {
     try {
+      clearAuthCache();
       await auth.signOut();
       router.push("/");
     } catch (error) {

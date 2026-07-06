@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { UserPlus, LogIn, X, Sparkles } from "lucide-react";
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { setAuthCache } from "@/lib/auth-cache";
 
 export function AuthButtons() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export function AuthButtons() {
       }
 
       const data = await res.json();
+      setAuthCache({ email: user.email!, role: data.role, name: user.displayName ?? "", status: data.status });
       if (data.role === "admin") {
         router.push("/admin");
       } else {
@@ -89,6 +91,7 @@ export function AuthButtons() {
         return;
       }
 
+      setAuthCache({ email: user.email!, role: data.role, name: user.displayName ?? "", status: data.status });
       if (data.role === "admin") {
         router.push("/admin");
       } else {

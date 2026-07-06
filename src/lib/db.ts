@@ -15,61 +15,65 @@ export const db = createClient({
 
 let usersInitialized = false;
 let courseTablesInitialized = false;
+let initPromise: Promise<void> | null = null;
 
 export async function initDb() {
-  if (usersInitialized) {
-    return;
-  }
+  if (usersInitialized) return;
+  if (initPromise) return initPromise;
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      name TEXT,
-      email TEXT UNIQUE,
-      image TEXT,
-      role TEXT DEFAULT 'student',
-      status TEXT DEFAULT 'pendiente',
-      phone TEXT DEFAULT '',
-      age TEXT DEFAULT '',
-      job_title TEXT DEFAULT '',
-      education_level TEXT DEFAULT '',
-      address TEXT DEFAULT '',
-      certificate_photo TEXT DEFAULT '',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+  initPromise = (async () => {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        email TEXT UNIQUE,
+        image TEXT,
+        role TEXT DEFAULT 'student',
+        status TEXT DEFAULT 'pendiente',
+        phone TEXT DEFAULT '',
+        age TEXT DEFAULT '',
+        job_title TEXT DEFAULT '',
+        education_level TEXT DEFAULT '',
+        address TEXT DEFAULT '',
+        certificate_photo TEXT DEFAULT '',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS payments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL,
-      cuota INTEGER NOT NULL,
-      monto INTEGER NOT NULL DEFAULT 120,
-      status TEXT DEFAULT 'pendiente',
-      payment_receipt TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        cuota INTEGER NOT NULL,
+        monto INTEGER NOT NULL DEFAULT 120,
+        status TEXT DEFAULT 'pendiente',
+        payment_receipt TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
 
-  // Migrations for existing tables (safe - ignore if column already exists)
-  const migrations = [
-    "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'pendiente'",
-    "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''",
-    "ALTER TABLE users ADD COLUMN registration_receipt TEXT",
-    "ALTER TABLE users ADD COLUMN age TEXT DEFAULT ''",
-    "ALTER TABLE users ADD COLUMN job_title TEXT DEFAULT ''",
-    "ALTER TABLE users ADD COLUMN education_level TEXT DEFAULT ''",
-    "ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''",
-    "ALTER TABLE users ADD COLUMN certificate_photo TEXT DEFAULT ''",
-    "ALTER TABLE payments ADD COLUMN payment_receipt TEXT",
-    "ALTER TABLE progress ADD COLUMN blocked INTEGER DEFAULT 0",
-    "ALTER TABLE users ADD COLUMN trial_exam_done INTEGER DEFAULT 0",
-  ];
-  for (const sql of migrations) {
-    try { await db.execute(sql); } catch { /* already applied */ }
-  }
+    // Migrations for existing tables (safe - ignore if column already exists)
+    const migrations = [
+      "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'pendiente'",
+      "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''",
+      "ALTER TABLE users ADD COLUMN registration_receipt TEXT",
+      "ALTER TABLE users ADD COLUMN age TEXT DEFAULT ''",
+      "ALTER TABLE users ADD COLUMN job_title TEXT DEFAULT ''",
+      "ALTER TABLE users ADD COLUMN education_level TEXT DEFAULT ''",
+      "ALTER TABLE users ADD COLUMN address TEXT DEFAULT ''",
+      "ALTER TABLE users ADD COLUMN certificate_photo TEXT DEFAULT ''",
+      "ALTER TABLE payments ADD COLUMN payment_receipt TEXT",
+      "ALTER TABLE progress ADD COLUMN blocked INTEGER DEFAULT 0",
+      "ALTER TABLE users ADD COLUMN trial_exam_done INTEGER DEFAULT 0",
+    ];
+    for (const sql of migrations) {
+      try { await db.execute(sql); } catch { /* already applied */ }
+    }
 
-  usersInitialized = true;
+    usersInitialized = true;
+  })();
+
+  return initPromise;
 }
 
 /** Registra cuotas en revisión al inscribirse (120 Bs por mes). El admin aprueba cada cuota por separado. */

@@ -6,6 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Shield, BookOpen, Scale, Users, ChevronDown, Star, Clock, Award, X, HelpCircle, WifiOff } from "lucide-react";
 import { AuthButtons } from "./components/AuthButtons";
+import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
 import anime from "animejs";
 
 export default function LandingPage() {
@@ -16,8 +17,18 @@ export default function LandingPage() {
   const heroBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const cached = getAuthCache();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user && user.email) {
+        // If cache matches, redirect immediately without API call
+        if (cached && cached.email === user.email) {
+          if (cached.role === "admin") {
+            router.push("/admin");
+          } else {
+            router.push("/courses");
+          }
+          return;
+        }
         try {
           const res = await fetch(`/api/user-role?email=${encodeURIComponent(user.email)}`);
           if (res.ok) {
@@ -26,6 +37,7 @@ export default function LandingPage() {
               setLoading(false);
               return;
             }
+            setAuthCache({ email: user.email!, role: data.role, name: data.name ?? "", status: data.status });
             if (data.role === "admin") {
               router.push("/admin");
             } else {

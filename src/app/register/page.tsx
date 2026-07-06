@@ -6,6 +6,7 @@ import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import Swal from "sweetalert2";
 import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload, Download } from "lucide-react";
+import { getAuthCache } from "@/lib/auth-cache";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -45,8 +46,23 @@ export default function RegisterPage() {
   const [accessCheck, setAccessCheck] = useState<"loading" | "allowed">("loading");
 
   useEffect(() => {
+    const cached = getAuthCache();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser?.email) {
+        setAccessCheck("allowed");
+        return;
+      }
+
+      // Cache hit with same email
+      if (cached && cached.email === firebaseUser.email) {
+        if (cached.role === "admin") {
+          router.push("/admin");
+          return;
+        }
+        if (cached.status === "activo") {
+          router.push("/courses");
+          return;
+        }
         setAccessCheck("allowed");
         return;
       }

@@ -116,7 +116,7 @@ export default function LandingPage() {
           <div
             className="absolute inset-0 bg-cover bg-center opacity-35"
             style={{
-              backgroundImage: 'url("/indigenous_justice_hero.png")',
+              backgroundImage: 'url("/indigenous_justice_hero.webp")',
               maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)',
               WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)'
             }}
@@ -194,7 +194,7 @@ export default function LandingPage() {
               </div>
               <h1 className="text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[8rem] md:mt-[11rem]">
                 <span className="text-white">Escuela de Jueces Naturales</span>
-                <br/>
+                <br />
                 <span className="text-white">Curso: Justicia Indígena</span>
                 <br />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-accent">
@@ -202,6 +202,16 @@ export default function LandingPage() {
                 </span>
               </h1>
             </div>
+            <p className="text-lime-50 text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed px-2 font-semibold text-center">
+              <span className="font-bold text-yellow-300 drop-shadow-lg">CONTACTOS:</span>{" "}
+              <span className="text-white font-bold text-2xl drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                71539769
+              </span>
+              <span className="mx-3 text-yellow-300">•</span>
+              <span className="text-white font-bold text-2xl drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                76517230
+              </span>
+            </p>
 
             <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed px-2">
               Explora y fortalece los conocimientos sobre la pluralidad jurídica
@@ -283,12 +293,12 @@ export default function LandingPage() {
               topics: [
                 "La Cosa Juzgada y mecanismos de ejecución de la sentencia de la JIOC (Parte 2)",
                 "Pluralismo Jurídico y Marco Constitucional.",
-                "Tribunal Constitucional y la Justicia Indígena Originaria Campesina",,
+                "Tribunal Constitucional y la Justicia Indígena Originaria Campesina", ,
                 "Fuentes del Derecho Indígena Normas, Uso, Prácticas y Costumbres",
                 "Estudio de Casos Reales",
                 "Procedimientos de la Justicia Indígena.",
                 "Litigio Estratégico en el Ámbito Internacional."
-                
+
               ],
             },
 
@@ -312,16 +322,16 @@ export default function LandingPage() {
               {/* Glow */}
               <div
                 className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${color === "primary"
-                    ? "from-primary/5 to-transparent"
-                    : "from-accent/5 to-transparent"
+                  ? "from-primary/5 to-transparent"
+                  : "from-accent/5 to-transparent"
                   }`}
               />
 
               {/* Icono */}
               <div
                 className={`relative inline-flex p-3 rounded-xl mb-5 ${color === "primary"
-                    ? "bg-primary/10 text-primary"
-                    : "bg-accent/10 text-accent"
+                  ? "bg-primary/10 text-primary"
+                  : "bg-accent/10 text-accent"
                   }`}
               >
                 <Icon className="w-6 h-6" />
@@ -600,7 +610,7 @@ export default function LandingPage() {
                 si tiene dificultad para mantener una conexión estable a internet o no puedes acceder a la plataforma en forma virtual, no te preocupes!
               </p>
               <p>
-                Podemos enviarte el contenido del curso mediante <strong className="text-white">USB</strong> 
+                Podemos enviarte el contenido del curso mediante <strong className="text-white">USB</strong>
                 por un medio de transporte (flota), para que puedas estudiar sin la necesidad de estar conectado.
 
               </p>

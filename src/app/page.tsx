@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Shield, BookOpen, Scale, Users, ChevronDown, Star, Clock, Award, X, HelpCircle, WifiOff } from "lucide-react";
+import { Shield, BookOpen, Scale, Users, ChevronDown, Star, Clock, Award, X, HelpCircle, WifiOff, Building2, Monitor, Globe, Package } from "lucide-react";
 import { AuthButtons } from "./components/AuthButtons";
 import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
 import anime from "animejs";
@@ -225,10 +226,31 @@ export default function LandingPage() {
               </span>
             </p>
 
-            <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed px-2">
-              Explora y fortalece los conocimientos sobre la pluralidad jurídica
-              y los sistemas de justicia comunitaria en Bolivia.
-            </p>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mt-10 mb-8">
+              Modalidades
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto px-2">
+              {[
+                { href: "/modalidades/presencial", icon: Building2, label: "Presencial", desc: "Clases en el Edificio Rojas" },
+                { href: "/modalidades/virtual", icon: Monitor, label: "Virtual", desc: "En vivo con acceso a internet" },
+                { href: "/modalidades/en-linea", icon: Globe, label: "En Línea", desc: "Prueba gratis y examen en plataforma" },
+                { href: "/modalidades/a-distancia", icon: Package, label: "A Distancia", desc: "USB con todo el contenido" },
+              ].map(({ href, icon: Icon, label, desc }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="group relative bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-6 hover:bg-white/8 hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 text-center"
+                >
+                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/5 to-transparent" />
+                  <div className="relative inline-flex p-3 rounded-xl mb-4 bg-primary/10 text-primary">
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="relative text-white font-bold text-lg mb-2">{label}</h3>
+                  <p className="relative text-slate-400 text-sm">{desc}</p>
+                </Link>
+              ))}
+            </div>
 
             {/* Stats rápidas */}
             <div className="flex flex-wrap justify-center gap-4 md:gap-8 mt-8 md:mt-10">

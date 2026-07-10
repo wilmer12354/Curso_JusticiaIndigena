@@ -96,6 +96,21 @@ export default function ADistanciaPage() {
             en todo momento.
           </p>
         </div>
+
+        {/* Inscripción */}
+        <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center mt-10">
+          <p className="text-slate-300 text-xl mb-6">
+            ¿Listo para inscribirte? Completa el formulario y comienza tu aprendizaje.
+          </p>
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSf893LfRzC8LwErurS32uOMMzqdogcolbHEJO9uouachX3vrA/viewform?usp=header"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-orange-600 text-white font-bold text-lg transition-all duration-300 scale-110 shadow-[0_0_40px_rgba(194,65,12,0.5)] animate-pulse ring-2 ring-orange-400/50"
+          >
+            Inscribirme ahora
+          </a>
+        </div>
       </div>
     </div>
   );

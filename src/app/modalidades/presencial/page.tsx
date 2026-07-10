@@ -65,21 +65,38 @@ export default function PresencialPage() {
           </div>
         </div>
 
-        {/* Google Maps */}
-        <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center">
-          <h3 className="text-2xl font-semibold text-orange-500 mb-4">¿Cómo llegar?</h3>
-          <p className="text-slate-400 text-lg mb-6">
-            Haz clic en el botón de abajo para abrir Google Maps y obtener indicaciones precisas.
-          </p>
-          <a
-            href="https://maps.app.goo.gl/45BXYYaf3Am1Ye5E8"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-orange-600 text-white font-bold text-lg transition-all duration-300 scale-110 shadow-[0_0_40px_rgba(194,65,12,0.5)] animate-pulse ring-2 ring-orange-400/50"
-          >
-            <MapPin className="w-5 h-5" />
-            Abrir en Google Maps
-          </a>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Google Maps */}
+          <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center">
+            <h3 className="text-2xl font-semibold text-orange-500 mb-4">¿Cómo llegar?</h3>
+            <p className="text-slate-400 text-lg mb-6">
+              Haz clic en el botón de abajo para abrir Google Maps y obtener indicaciones precisas.
+            </p>
+            <a
+              href="https://maps.app.goo.gl/45BXYYaf3Am1Ye5E8"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-orange-600 text-white font-bold text-lg transition-all duration-300 scale-110 shadow-[0_0_40px_rgba(194,65,12,0.5)] animate-pulse ring-2 ring-orange-400/50"
+            >
+              <MapPin className="w-5 h-5" />
+              Abrir en Google Maps
+            </a>
+          </div>
+
+          {/* Inscripción */}
+          <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center">
+            <p className="text-slate-300 text-xl mb-6">
+              ¿Listo para inscribirte? Completa el formulario y comienza tu aprendizaje.
+            </p>
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSerA300J9r2nb8fZqT2PAqJDMJ1y_Kez9a0ATPI6vUs_miFzA/viewform?usp=header"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-orange-600 text-white font-bold text-lg transition-all duration-300 scale-110 shadow-[0_0_40px_rgba(194,65,12,0.5)] animate-pulse ring-2 ring-orange-400/50"
+            >
+              Inscribirme ahora
+            </a>
+          </div>
         </div>
       </div>
     </div>

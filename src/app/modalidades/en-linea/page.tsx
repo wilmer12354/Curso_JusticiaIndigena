@@ -29,14 +29,14 @@ export default function EnLineaPage() {
             <Globe className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold">Modalidad En Línea</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-orange-500">Modalidad En Línea</h1>
             <p className="text-slate-400 mt-1">Prueba gratis y examen en la plataforma</p>
           </div>
         </div>
 
         {/* Descripción */}
         <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 mb-8">
-          <p className="text-slate-300 text-lg leading-relaxed">
+          <p className="text-slate-300 text-xl leading-relaxed">
             En esta modalidad puedes realizar todo el curso directamente desde nuestra plataforma.
             No necesitas asistir a ninguna clase presencial ni virtual programada.
           </p>
@@ -50,8 +50,8 @@ export default function EnLineaPage() {
                 <FileCheck className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-lg mb-2">Prueba Gratis</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-orange-500 font-bold text-xl mb-2">Prueba Gratis</h3>
+                <p className="text-slate-400 text-base leading-relaxed">
                   Accede a una prueba gratuita del contenido para que conozcas la plataforma y
                   el material del curso sin compromiso.
                 </p>
@@ -64,8 +64,8 @@ export default function EnLineaPage() {
                 <ClipboardCheck className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-lg mb-2">Rinde tu Examen</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-orange-500 font-bold text-xl mb-2">Rinde tu Examen</h3>
+                <p className="text-slate-400 text-base leading-relaxed">
                   Al finalizar los temas, podrás rendir tu examen directamente en la plataforma
                   para evaluar tus conocimientos.
                 </p>
@@ -78,9 +78,9 @@ export default function EnLineaPage() {
                 <FileText className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-lg mb-2">Inscríbete</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  Puedes inscribirte <strong className="text-white">directamente</strong> desde el inicio
+                <h3 className="text-orange-500 font-bold text-xl mb-2">Inscríbete</h3>
+                <p className="text-slate-400 text-base leading-relaxed">
+                  Puedes inscribirte <strong className="text-orange-500">directamente</strong> desde el inicio
                   o esperar a terminar la prueba gratis para decidirte.
                 </p>
               </div>
@@ -90,12 +90,12 @@ export default function EnLineaPage() {
 
         {/* CTA */}
         <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center">
-          <p className="text-slate-300 text-lg mb-6">
+          <p className="text-slate-300 text-xl mb-6">
             ¿Listo para empezar? Regístrate y comienza tu prueba gratis ahora.
           </p>
           <Link
             href="/register"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-all duration-300 hover:scale-105"
+            className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-orange-600 text-white font-bold text-lg transition-all duration-300 scale-110 shadow-[0_0_40px_rgba(194,65,12,0.5)] animate-pulse ring-2 ring-orange-400/50"
           >
             Inscribirme ahora
           </Link>

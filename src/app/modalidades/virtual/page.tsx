@@ -29,7 +29,7 @@ export default function VirtualPage() {
             <Monitor className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold">Modalidad Virtual</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-orange-500">Modalidad Virtual</h1>
             <p className="text-slate-400 mt-1">Clases en vivo con acceso a internet</p>
           </div>
         </div>
@@ -38,9 +38,9 @@ export default function VirtualPage() {
         <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 mb-8">
           <div className="flex items-start gap-3 mb-6">
             <Wifi className="w-6 h-6 text-primary shrink-0 mt-1" />
-            <p className="text-slate-300 text-lg leading-relaxed">
-              Necesitarás <strong className="text-white">acceso a internet</strong> para conectarte a las
-              sesiones en vivo. Las clases se transmiten en el <strong className="text-white">mismo horario</strong>{" "}
+            <p className="text-slate-300 text-xl leading-relaxed">
+              Necesitarás <strong className="text-orange-500">acceso a internet</strong> para conectarte a las
+              sesiones en vivo. Las clases se transmiten en el <strong className="text-orange-500">mismo horario</strong>{" "}
               que la modalidad presencial.
             </p>
           </div>
@@ -52,8 +52,8 @@ export default function VirtualPage() {
             <div className="inline-flex p-3 rounded-xl mb-4 bg-primary/10 text-primary">
               <Video className="w-6 h-6" />
             </div>
-            <h3 className="text-white font-bold text-lg mb-2">Clases en Vivo</h3>
-            <p className="text-slate-400 text-sm leading-relaxed">
+            <h3 className="text-orange-500 font-bold text-xl mb-2">Clases en Vivo</h3>
+            <p className="text-slate-400 text-xl leading-relaxed">
               Recibirás un enlace para unirte a la clase en vivo. Podrás hacer preguntas en tiempo real
               y participar como si estuvieras en el aula.
             </p>
@@ -62,9 +62,9 @@ export default function VirtualPage() {
             <div className="inline-flex p-3 rounded-xl mb-4 bg-accent/10 text-accent">
               <Save className="w-6 h-6" />
             </div>
-            <h3 className="text-white font-bold text-lg mb-2">Clases Grabadas</h3>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              Todas las sesiones quedan <strong className="text-white">grabadas</strong> para que puedas
+            <h3 className="text-orange-500 font-bold text-xl mb-2">Clases Grabadas</h3>
+            <p className="text-slate-400 text-xl leading-relaxed">
+              Todas las sesiones quedan <strong className="text-orange-500">grabadas</strong> para que puedas
               repasarlas cuando lo necesites. No pierdas ningún detalle.
             </p>
           </div>
@@ -72,7 +72,7 @@ export default function VirtualPage() {
 
         {/* Nota importante */}
         <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center">
-          <p className="text-slate-300 text-lg leading-relaxed">
+          <p className="text-slate-300 text-xl leading-relaxed">
             El horario es el mismo que el de la modalidad presencial. Solo necesitas un dispositivo
             con internet y el enlace de acceso que te proporcionaremos.
           </p>

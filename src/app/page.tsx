@@ -240,14 +240,14 @@ export default function LandingPage() {
                 <Link
                   key={href}
                   href={href}
-                  className="group relative bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl py-3 px-4 hover:bg-white/8 hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 text-center"
+                  className="group relative bg-white/10 backdrop-blur-xl border border-primary/30 rounded-2xl py-6 px-5 hover:bg-white/15 hover:border-primary/50 transition-all duration-500 hover:-translate-y-1 hover:scale-105 text-center shadow-lg shadow-primary/20"
                 >
-                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/5 to-transparent" />
-                  <div className="relative inline-flex p-3 rounded-xl mb-4 bg-primary/10 text-primary">
-                    <Icon className="w-6 h-6" />
+                  <div className="absolute inset-0 rounded-2xl opacity-30 bg-gradient-to-br from-primary/10 to-transparent" />
+                  <div className="relative inline-flex p-4 rounded-xl mb-4 bg-primary/20 text-orange-400">
+                    <Icon className="w-8 h-8" />
                   </div>
-                  <h3 className="relative text-white font-bold text-lg mb-2">{label}</h3>
-                  <p className="relative text-slate-400 text-sm">{desc}</p>
+                  <h3 className="relative text-white font-bold text-xl mb-2">{label}</h3>
+                  <p className="relative text-slate-300 text-sm font-medium">{desc}</p>
                 </Link>
               ))}
             </div>

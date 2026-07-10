@@ -29,15 +29,15 @@ export default function ADistanciaPage() {
             <Package className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold">Modalidad a Distancia</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-orange-500">Modalidad a Distancia</h1>
             <p className="text-slate-400 mt-1">USB con todo el contenido del curso</p>
           </div>
         </div>
 
         {/* Descripción principal */}
         <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 mb-8">
-          <p className="text-slate-300 text-lg leading-relaxed">
-            Te enviaremos un <strong className="text-white">USB</strong> a través de un medio de transporte
+          <p className="text-slate-300 text-xl leading-relaxed">
+            Te enviaremos un <strong className="text-orange-500">USB</strong> a través de un medio de transporte
             (flota) con todos los temas del curso incluidos. Podrás estudiar sin necesidad de
             estar conectado a internet.
           </p>
@@ -51,8 +51,8 @@ export default function ADistanciaPage() {
                 <Usb className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-lg mb-2">1. Recibe el USB</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-orange-500 font-bold text-xl mb-2">1. Recibe el USB</h3>
+                <p className="text-slate-400 text-base leading-relaxed">
                   El USB llegará a tu domicilio con todo el contenido del curso precargado.
                 </p>
               </div>
@@ -64,8 +64,8 @@ export default function ADistanciaPage() {
                 <Smartphone className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-lg mb-2">2. Conecta a tu Celular</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-orange-500 font-bold text-xl mb-2">2. Conecta a tu Celular</h3>
+                <p className="text-slate-400 text-base leading-relaxed">
                   Conecta el USB a tu celular usando un adaptador OTG (si es necesario).
                 </p>
               </div>
@@ -77,10 +77,10 @@ export default function ADistanciaPage() {
                 <Download className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-white font-bold text-lg mb-2">3. Instala la App</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-orange-500 font-bold text-xl mb-2">3. Instala la App</h3>
+                <p className="text-slate-400 text-base leading-relaxed">
                   Dentro del USB encontrarás la aplicación{" "}
-                  <strong className="text-white">EJIOC.apk</strong>. Instálala en tu celular
+                  <strong className="text-orange-500">EJIOC.apk</strong>. Instálala en tu celular
                   y podrás acceder a todos los temas del curso.
                 </p>
               </div>
@@ -90,7 +90,7 @@ export default function ADistanciaPage() {
 
         {/* Nota final */}
         <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center">
-          <p className="text-slate-300 text-lg leading-relaxed">
+          <p className="text-slate-300 text-xl leading-relaxed">
             Esta modalidad es ideal si tienes problemas de conectividad o prefieres estudiar
             sin depender de internet. Todo el contenido estará disponible en tu dispositivo
             en todo momento.

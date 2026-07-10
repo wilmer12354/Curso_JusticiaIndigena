@@ -122,7 +122,7 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════
           HERO SECTION — Header con login + Body con info
       ═══════════════════════════════════════════ */}
-      <main className="relative min-h-screen flex flex-col">
+      <main className="relative min-h-[80vh] md:min-h-screen flex flex-col">
 
         {/* Fondo decorativo global del hero */}
         <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
@@ -182,7 +182,7 @@ export default function LandingPage() {
           {/* Título hero centrado */}
           <div className="text-center px-6 pt-16 pb-10 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             {/* Badge */}
-            <div className="flex items-center justify-center gap-3 -mt-[2rem] md:-mt-[6rem]">
+            <div className="flex items-center justify-center gap-3 -mt-[2rem] md:-mt-[4rem] lg:-mt-[6rem]">
               <img
                 src="/logo-cepabol.png"
                 alt="Logo CEPABOL"
@@ -192,7 +192,7 @@ export default function LandingPage() {
             </div>
 
             <div className="relative max-w-4xl mx-auto">
-              <div className="fixed top-36 right-5 z-50 flex flex-col items-end gap-2">
+              <div className="fixed top-24 md:top-36 right-5 z-50 flex flex-col items-end gap-2">
                 <span className="hidden md:inline text-ms text-amber-300 font-medium whitespace-nowrap bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-amber-500/20 shadow-lg">
                   ¿Tienes problemas con la conectividad de internet? 👇
                 </span>
@@ -205,7 +205,7 @@ export default function LandingPage() {
                   <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-500" />
                 </button>
               </div>
-              <h1 className="text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[8rem] md:mt-[11rem]">
+              <h1 className="text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight mb-1 p-4 md:p-7 mt-[4rem] md:mt-[8rem] lg:mt-[11rem]">
                 <span className="text-white">Escuela de Jueces Naturales</span>
                 <br />
                 <span className="text-white">Curso: Justicia Indígena</span>
@@ -230,7 +230,7 @@ export default function LandingPage() {
               Modalidades
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto px-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
               {[
                 { href: "/modalidades/presencial", icon: Building2, label: "Presencial", desc: "Clases en el Edificio Rojas" },
                 { href: "/modalidades/virtual", icon: Monitor, label: "Virtual", desc: "En vivo con acceso a internet" },
@@ -240,7 +240,7 @@ export default function LandingPage() {
                 <Link
                   key={href}
                   href={href}
-                  className="group relative bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-6 hover:bg-white/8 hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 text-center"
+                  className="group relative bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl py-3 px-4 hover:bg-white/8 hover:border-primary/30 transition-all duration-500 hover:-translate-y-1 text-center"
                 >
                   <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-primary/5 to-transparent" />
                   <div className="relative inline-flex p-3 rounded-xl mb-4 bg-primary/10 text-primary">

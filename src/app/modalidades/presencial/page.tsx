@@ -52,17 +52,13 @@ export default function PresencialPage() {
         <h2 className="text-xl font-semibold text-white mb-6">Ubicación de referencia</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl overflow-hidden group hover:border-primary/30 transition-all duration-500">
-            <div className="aspect-video bg-gradient-to-br from-primary/20 to-accent/10 flex items-center justify-center">
-              <Building2 className="w-16 h-16 text-primary/40" />
-            </div>
+            <img src="/ubi1.jpg" alt="Vista del Edificio Rojas" className="w-full" />
             <div className="p-4">
               <p className="text-slate-400 text-sm text-center">Vista del Edificio Rojas — Calle 1 y 2</p>
             </div>
           </div>
           <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl overflow-hidden group hover:border-primary/30 transition-all duration-500">
-            <div className="aspect-video bg-gradient-to-br from-accent/20 to-primary/10 flex items-center justify-center">
-              <Building2 className="w-16 h-16 text-accent/40" />
-            </div>
+            <img src="/ubi2.jpg" alt="Ingreso al Edificio Rojas" className="w-full" />
             <div className="p-4">
               <p className="text-slate-400 text-sm text-center">Ingreso al Edificio Rojas — 3er Piso</p>
             </div>
@@ -76,12 +72,12 @@ export default function PresencialPage() {
             Haz clic en el botón de abajo para abrir Google Maps y obtener indicaciones precisas.
           </p>
           <a
-            href="https://www.google.com/maps/search/Edificio+Rojas+calle+1+y+2+Bolivia"
+            href="https://maps.app.goo.gl/45BXYYaf3Am1Ye5E8"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 transition-all duration-300 hover:scale-105"
+            className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-orange-600 text-white font-bold text-lg transition-all duration-300 scale-110 shadow-[0_0_40px_rgba(194,65,12,0.5)]"
           >
-            <MapPin className="w-5 h-5" />
+            <MapPin className="w-6 h-6" />
             Abrir en Google Maps
           </a>
         </div>

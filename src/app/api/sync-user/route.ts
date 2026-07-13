@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     if (!isAdmin) {
       if (![1, 2, 3].includes(enrollmentMonths)) {
         return NextResponse.json(
-          { error: "Indica cuántos meses pagaste: 1, 2 o 3 (120 Bs por mes)." },
+          { error: "Indica cuántos meses pagaste: 1, 2 o 3 (150 Bs por mes)." },
           { status: 400 }
         );
       }

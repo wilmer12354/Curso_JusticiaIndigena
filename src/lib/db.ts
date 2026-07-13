@@ -45,7 +45,7 @@ export async function initDb() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         cuota INTEGER NOT NULL,
-        monto INTEGER NOT NULL DEFAULT 120,
+        monto INTEGER NOT NULL DEFAULT 150,
         status TEXT DEFAULT 'pendiente',
         payment_receipt TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -76,7 +76,7 @@ export async function initDb() {
   return initPromise;
 }
 
-/** Registra cuotas en revisión al inscribirse (120 Bs por mes). El admin aprueba cada cuota por separado. */
+/** Registra cuotas en revisión al inscribirse (150 Bs por mes). El admin aprueba cada cuota por separado. */
 export async function insertEnrollmentPendingPayments(
   userId: string,
   months: 1 | 2 | 3
@@ -88,7 +88,7 @@ export async function insertEnrollmentPendingPayments(
     });
     if (exists.rows.length > 0) continue;
     await db.execute({
-      sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, 120, 'pendiente')`,
+      sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, 150, 'pendiente')`,
       args: [userId, c],
     });
   }

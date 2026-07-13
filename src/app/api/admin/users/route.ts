@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
       education_level: row.education_level,
       address: row.address,
       certificate_photo: row.certificate_photo,
+      trial_exam_done: row.trial_exam_done ?? 0,
     }));
 
     return NextResponse.json(users);

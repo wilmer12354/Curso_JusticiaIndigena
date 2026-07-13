@@ -221,10 +221,10 @@ export default function CoursesPage() {
   };
 
   const remainingCuotas = nextCuotaNeeded != null ? 4 - nextCuotaNeeded : 3;
-  const paymentAllAmount = remainingCuotas * 120;
+  const paymentAllAmount = remainingCuotas * 150;
   const payAllLabel = `Pagar todo lo que falta (${paymentAllAmount} Bs)`;
   const qrNumber = paymentMode === "next" ? 1 : Math.min(remainingCuotas, 3);
-  const qrAmount = qrNumber * 120;
+  const qrAmount = qrNumber * 150;
   const canNotifyPayment = hasViewedQr && Boolean(receiptFile) && !requestingCuota;
 
   if (loading || !user) {
@@ -386,7 +386,7 @@ export default function CoursesPage() {
               </p>
               <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>
                 {canEnroll
-                  ? "Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de 120 Bs)."
+                  ? "Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de 150 Bs)."
                   : "Mira el video y rinde el examen del Tema 1. Después podrás inscribirte."}
               </p>
             </div>
@@ -446,7 +446,7 @@ export default function CoursesPage() {
               </div>
             </div>
             <div style={{ fontSize: 14, color: "#64748b", flexShrink: 0 }}>
-              Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * 120} / 360 Bs</strong>
+              Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * 150} / 450 Bs</strong>
             </div>
           </div>
         )}

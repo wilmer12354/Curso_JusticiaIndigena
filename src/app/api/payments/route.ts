@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/payments  → register a new installment request
-// Body: { userId, cuota }  cuota = 1|2|3  (monto is fixed at 120)
-// Or body: { userId, cuota: 0 } for full payment (360 bs, creates cuota 1+2+3 pending)
+// Body: { userId, cuota }  cuota = 1|2|3  (monto is fixed at 150)
+// Or body: { userId, cuota: 0 } for full payment (450 bs, creates cuota 1+2+3 pending)
 export async function POST(request: NextRequest) {
   try {
     await initDb();
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       }
 
       await db.execute({
-        sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, 120, 'pendiente', ?)`,
+sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, 150, 'pendiente', ?)`,
         args: [userId, cuotaNumber, receiptUrl],
       });
       return { skipped: false };

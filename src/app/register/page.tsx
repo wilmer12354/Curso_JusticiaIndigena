@@ -12,7 +12,7 @@ import Link from "next/link";
 
 const MAX_RECEIPT_BYTES = 5.5 * 1024 * 1024;
 const RECEIPT_ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
-const PRICE_PER_MONTH = 120;
+const PRICE_PER_MONTH = 150;
 
 type PaymentMonths = 1 | 2 | 3;
 
@@ -320,7 +320,7 @@ export default function RegisterPage() {
           <div className="register-card-header">
             <h1 className="register-title">Inscribirme al curso</h1>
             <p className="register-subtitle">
-              Completaste la prueba del Tema 1. Ahora completa tus datos y elige tu plan de pago (1, 2 o 3 meses de 120 Bs).
+              Completaste la prueba del Tema 1. Ahora completa tus datos y elige tu plan de pago (1, 2 o 3 meses de 150 Bs).
             </p>
           </div>
 

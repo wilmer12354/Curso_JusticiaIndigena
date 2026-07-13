@@ -22,6 +22,7 @@ type User = {
   education_level?: string;
   address?: string;
   certificate_photo?: string;
+  trial_exam_done?: number;
 };
 
 type Payment = {
@@ -416,9 +417,9 @@ export default function AdminDashboard() {
               {activeSection === "dashboard"
                 ? "Gestiona los contenidos de Justicia Indígena."
                 : activeSection === "pendientes"
-                  ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (120 Bs) solo si el comprobante coincide con ese mes."
+                  ? "Activa la cuenta cuando corresponda. En Pagos, aprueba cada mes (150 Bs) solo si el comprobante coincide con ese mes."
                   : activeSection === "pagos"
-                    ? "Cada fila es un mes (120 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
+                    ? "Cada fila es un mes (150 Bs). Aunque el estudiante haya elegido varios meses al inscribirse, aprueba o rechaza uno por uno según lo que veas en el comprobante."
                     : activeSection === "bloqueados"
                       ? "Estudiantes que agotaron sus 3 intentos en un tema. Desbloquéalos para que puedan reintentar."
                       : "Visualiza, crea, edita y elimina estudiantes."}
@@ -705,7 +706,7 @@ export default function AdminDashboard() {
                 lineHeight: 1.55,
               }}
             >
-              <strong style={{ color: "#e0e7ff" }}>Importante:</strong> un estudiante puede marcar que pagó 3 meses y solo transferir 120 Bs. Por eso cada mes aparece aparte: solo pulsa Aprobar en el mes que el comprobante respalde (120 Bs por mes aprobado).
+              <strong style={{ color: "#e0e7ff" }}>Importante:</strong> un estudiante puede marcar que pagó 3 meses y solo transferir 150 Bs. Por eso cada mes aparece aparte: solo pulsa Aprobar en el mes que el comprobante respalde (150 Bs por mes aprobado).
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
               <button onClick={fetchPayments} title="Recargar" style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}>
@@ -1001,6 +1002,14 @@ export default function AdminDashboard() {
                           {u.job_title && <div><strong style={{ color: "#cbd5e1" }}>Cargo:</strong> {u.job_title}</div>}
                           {u.education_level && <div><strong style={{ color: "#cbd5e1" }}>Estudios:</strong> {u.education_level}</div>}
                           {u.address && <div><strong style={{ color: "#cbd5e1" }}>Dirección:</strong> {u.address}</div>}
+                          {u.status === "prueba" && (
+                            <div style={{ marginTop: 4 }}>
+                              <strong style={{ color: "#cbd5e1" }}>Prueba:</strong>{" "}
+                              <span style={{ color: Number(u.trial_exam_done) === 1 ? "#4ade80" : "#f59e0b", fontWeight: 600 }}>
+                                {Number(u.trial_exam_done) === 1 ? "Completada ✓" : "Pendiente ✗"}
+                              </span>
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: "14px 20px" }}>
                           <span style={{
@@ -1015,11 +1024,11 @@ export default function AdminDashboard() {
                         <td style={{ padding: "14px 20px" }}>
                           <span style={{
                             padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-                            background: u.status === "activo" ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)",
-                            color: u.status === "activo" ? "#4ade80" : "#f59e0b",
-                            border: `1px solid ${u.status === "activo" ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}`,
+                            background: u.status === "activo" ? "rgba(34,197,94,0.1)" : u.status === "prueba" ? "rgba(168,85,247,0.1)" : "rgba(245,158,11,0.1)",
+                            color: u.status === "activo" ? "#4ade80" : u.status === "prueba" ? "#a855f7" : "#f59e0b",
+                            border: `1px solid ${u.status === "activo" ? "rgba(34,197,94,0.2)" : u.status === "prueba" ? "rgba(168,85,247,0.2)" : "rgba(245,158,11,0.2)"}`,
                           }}>
-                            {u.status === "activo" ? "Activo" : "Pendiente"}
+                            {u.status === "activo" ? "Activo" : u.status === "prueba" ? "Modo Prueba" : "Pendiente"}
                           </span>
                         </td>
                         <td style={{ padding: "14px 20px", fontSize: 13, color: "#64748b" }}>

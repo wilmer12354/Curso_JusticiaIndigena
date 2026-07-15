@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
 import { CUOTA_MAX_TOPIC } from "./modulos";
+import { PRICE_PER_MONTH } from "./pricing";
 
 const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -45,7 +46,7 @@ export async function initDb() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         cuota INTEGER NOT NULL,
-        monto INTEGER NOT NULL DEFAULT 150,
+        monto INTEGER NOT NULL DEFAULT 100,
         status TEXT DEFAULT 'pendiente',
         payment_receipt TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -76,7 +77,7 @@ export async function initDb() {
   return initPromise;
 }
 
-/** Registra cuotas en revisión al inscribirse (150 Bs por mes). El admin aprueba cada cuota por separado. */
+/** Registra cuotas en revisión al inscribirse (100 Bs por mes). El admin aprueba cada cuota por separado. */
 export async function insertEnrollmentPendingPayments(
   userId: string,
   months: 1 | 2 | 3
@@ -88,8 +89,8 @@ export async function insertEnrollmentPendingPayments(
     });
     if (exists.rows.length > 0) continue;
     await db.execute({
-      sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, 150, 'pendiente')`,
-      args: [userId, c],
+      sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, ?, 'pendiente')`,
+      args: [userId, c, PRICE_PER_MONTH],
     });
   }
 }

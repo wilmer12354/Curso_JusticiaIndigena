@@ -10,6 +10,7 @@ import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCirc
 import Link from "next/link";
 import { LogoutButton } from "../components/LogoutButton";
 import { MODULOS, MAX_TOPIC } from "@/lib/modulos";
+import { PRICE_PER_MONTH } from "@/lib/pricing";
 
 type StudentUser = {
   id: string;
@@ -221,10 +222,10 @@ export default function CoursesPage() {
   };
 
   const remainingCuotas = nextCuotaNeeded != null ? 4 - nextCuotaNeeded : 3;
-  const paymentAllAmount = remainingCuotas * 150;
+  const paymentAllAmount = remainingCuotas * PRICE_PER_MONTH;
   const payAllLabel = `Pagar todo lo que falta (${paymentAllAmount} Bs)`;
   const qrNumber = paymentMode === "next" ? 1 : Math.min(remainingCuotas, 3);
-  const qrAmount = qrNumber * 150;
+  const qrAmount = qrNumber * PRICE_PER_MONTH;
   const canNotifyPayment = hasViewedQr && Boolean(receiptFile) && !requestingCuota;
 
   if (loading || !user) {
@@ -386,7 +387,7 @@ export default function CoursesPage() {
               </p>
               <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>
                 {canEnroll
-                  ? "Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de 150 Bs)."
+                  ? `Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de ${PRICE_PER_MONTH} Bs).`
                   : "Mira el video y rinde el examen del Tema 1. Después podrás inscribirte."}
               </p>
             </div>
@@ -446,7 +447,7 @@ export default function CoursesPage() {
               </div>
             </div>
             <div style={{ fontSize: 14, color: "#64748b", flexShrink: 0 }}>
-              Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * 150} / 450 Bs</strong>
+               Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * PRICE_PER_MONTH} / {3 * PRICE_PER_MONTH} Bs</strong>
             </div>
           </div>
         )}
@@ -603,7 +604,7 @@ export default function CoursesPage() {
           }}>
             <AlertCircle size={16} color="#818cf8" />
             <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>
-              ¿Quieres pagar el curso completo (360 Bs)? Envía el comprobante al <strong style={{ color: "#f1f5f9" }}>71539769</strong> y haz clic en:
+              ¿Quieres pagar el curso completo ({3 * PRICE_PER_MONTH} Bs)? Envía el comprobante al <strong style={{ color: "#f1f5f9" }}>71539769</strong> y haz clic en:
             </span>
             <button
               onClick={() => handleRequestPayment(0)}
@@ -617,8 +618,8 @@ export default function CoursesPage() {
                 opacity: requestingCuota ? 0.7 : 1, transition: "all 0.2s",
               }}
             >
-              <CreditCard size={15} />
-              Pago completo (360 Bs)
+               <CreditCard size={15} />
+                  Pago completo ({3 * PRICE_PER_MONTH} Bs)
             </button>
           </div>
         )}

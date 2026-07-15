@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, initDb, getPaymentMaxTopic } from "@/lib/db";
 import { savePaymentReceipt } from "@/lib/comprobantes";
+import { PRICE_PER_MONTH } from "@/lib/pricing";
 
 // GET /api/payments?userId=...  → all payments for a user
 export async function GET(request: NextRequest) {
@@ -34,8 +35,8 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/payments  → register a new installment request
-// Body: { userId, cuota }  cuota = 1|2|3  (monto is fixed at 150)
-// Or body: { userId, cuota: 0 } for full payment (450 bs, creates cuota 1+2+3 pending)
+// Body: { userId, cuota }  cuota = 1|2|3  (monto is fixed at 100)
+// Or body: { userId, cuota: 0 } for full payment (300 bs, creates cuota 1+2+3 pending)
 export async function POST(request: NextRequest) {
   try {
     await initDb();
@@ -97,8 +98,8 @@ export async function POST(request: NextRequest) {
       }
 
       await db.execute({
-sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, 150, 'pendiente', ?)`,
-        args: [userId, cuotaNumber, receiptUrl],
+sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, ?, 'pendiente', ?)`,
+        args: [userId, cuotaNumber, PRICE_PER_MONTH, receiptUrl],
       });
       return { skipped: false };
     };
@@ -131,8 +132,8 @@ sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALU
     }
 
     await db.execute({
-      sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, 120, 'pendiente', ?)`,
-      args: [userId, cuota, receiptUrl],
+      sql: `INSERT INTO payments (user_id, cuota, monto, status, payment_receipt) VALUES (?, ?, ?, 'pendiente', ?)`,
+      args: [userId, cuota, PRICE_PER_MONTH, receiptUrl],
     });
 
     return NextResponse.json({ success: true, message: "Solicitud de pago registrada. El administrador la revisará pronto." });

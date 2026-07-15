@@ -5,6 +5,7 @@ import {
   deletePublicComprobanteIfExists,
   saveCertificatePhoto,
 } from "@/lib/comprobantes";
+import { PRICE_PER_MONTH } from "@/lib/pricing";
 
 type ParsedBody = {
   id: string;
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
     if (!isAdmin) {
       if (![1, 2, 3].includes(enrollmentMonths)) {
         return NextResponse.json(
-          { error: "Indica cuántos meses pagaste: 1, 2 o 3 (150 Bs por mes)." },
+          { error: `Indica cuántos meses pagaste: 1, 2 o 3 (${PRICE_PER_MONTH} Bs por mes).` },
           { status: 400 }
         );
       }

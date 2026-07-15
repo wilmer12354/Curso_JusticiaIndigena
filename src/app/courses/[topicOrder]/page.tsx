@@ -7,6 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus, Download } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
+import { PRICE_PER_MONTH } from "@/lib/pricing";
 
 type TopicDetail = {
   topicOrder: number;
@@ -184,7 +185,7 @@ export default function TopicDetailPage() {
   };
 
   const paymentCuota = getPaymentCuotaForTopic(Number(params.topicOrder));
-  const paymentAmount = 150;
+  const paymentAmount = PRICE_PER_MONTH;
   const isNotifyEnabled = showQr && Boolean(receiptFile) && !paymentRequested;
 
   const handleReceiptChange = (event: any) => {
@@ -390,7 +391,7 @@ export default function TopicDetailPage() {
               </div>
               <h1 className="text-3xl font-bold mb-3">Pago requerido</h1>
               <p className="text-slate-400 mb-4">
-                Para acceder al <strong className="text-white">Tema {params.topicOrder}</strong> debes pagar la cuota <strong className="text-white">{paymentCuota}</strong> (150 Bs).
+                Para acceder al <strong className="text-white">Tema {params.topicOrder}</strong> debes pagar la cuota <strong className="text-white">{paymentCuota}</strong> ({PRICE_PER_MONTH} Bs).
               </p>
               <p className="text-slate-400 mb-6">
                 Primero revisa el QR de pago y sube el comprobante. Luego podrás notificar el pago al administrador.
@@ -441,7 +442,7 @@ export default function TopicDetailPage() {
                   <div className="flex flex-col items-center gap-4">
                     <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
                       <div className="h-48 w-48">
-                        <img src="/qr_yala1.png" alt="Código QR para pago de 150 Bs" loading="eager" className="h-full w-full object-contain" />
+                        <img src="/qr_yala1.png" alt={`Código QR para pago de ${PRICE_PER_MONTH} Bs`} loading="eager" className="h-full w-full object-contain" />
                       </div>
                     </div>
                     <a

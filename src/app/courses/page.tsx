@@ -10,7 +10,7 @@ import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCirc
 import Link from "next/link";
 import { LogoutButton } from "../components/LogoutButton";
 import { MODULOS, MAX_TOPIC } from "@/lib/modulos";
-import { PRICE_PER_MONTH } from "@/lib/pricing";
+import { PRICE_TOTAL } from "@/lib/pricing";
 
 type StudentUser = {
   id: string;
@@ -42,13 +42,6 @@ type Payment = {
   status: string;
 };
 
-const CUOTA_LABELS: Record<number, string> = Object.fromEntries(
-  MODULOS.map((m, i) => {
-    const last = i < MODULOS.length - 1 ? MODULOS[i + 1].min - 1 : MAX_TOPIC;
-    return [i + 1, `${i + 1}ª cuota (Temas ${m.min}–${last})`];
-  })
-);
-
 export default function CoursesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -63,7 +56,7 @@ export default function CoursesPage() {
   const [paymentMessage, setPaymentMessage] = useState("");
   const [showQr, setShowQr] = useState(false);
   const [hasViewedQr, setHasViewedQr] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<"next" | "full">("next");
+
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptError, setReceiptError] = useState("");
   const [trialMode, setTrialMode] = useState(false);
@@ -75,19 +68,14 @@ export default function CoursesPage() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser && firebaseUser.email) {
         // Cache hit with same email → redirect immediately (no API)
-        if (cached && cached.email === firebaseUser.email) {
+        if (cached && cached.email === firebaseUser.email && cached.status === "activo") {
           if (cached.role === "admin") {
             router.push("/admin");
           } else {
-            const cachedStatus = cached.status || "activo";
             setUser({ id: firebaseUser.uid, name: cached.name || "Estudiante" });
-            setStatus(cachedStatus);
-            if (cachedStatus === "activo" || cachedStatus === "prueba") {
-              setLoading(false);
-              fetchTopics(firebaseUser.uid, cachedStatus);
-            } else {
-              setLoading(false);
-            }
+            setStatus("activo");
+            setLoading(false);
+            fetchTopics(firebaseUser.uid, "activo");
           }
           return;
         }
@@ -158,14 +146,16 @@ export default function CoursesPage() {
     setLoading(false);
   }
 
-  const handleRequestPayment = async (cuota: number) => {
+  const handlePayRemaining = async () => {
     if (!user || !receiptFile) return;
     setRequestingCuota(true);
     setPaymentMessage("");
+    setReceiptError("");
     try {
       const formData = new FormData();
       formData.append("userId", user.id);
-      formData.append("cuota", String(cuota));
+      formData.append("cuota", "2");
+      formData.append("monto", "240");
       formData.append("receipt", receiptFile);
 
       const res = await fetch("/api/payments", {
@@ -176,7 +166,8 @@ export default function CoursesPage() {
       const data = await res.json();
       if (res.ok) {
         setPaymentMessage(data.message ?? "Solicitud enviada. El administrador revisará tu pago.");
-        // Refresh payments
+        setReceiptFile(null);
+        setShowQr(false);
         const pr = await fetch(`/api/payments?userId=${encodeURIComponent(user.id)}`);
         if (pr.ok) {
           const pd = await pr.json();
@@ -193,8 +184,8 @@ export default function CoursesPage() {
   };
 
   const handleViewQr = () => {
-    setShowQr(true);
-    setHasViewedQr(true);
+    setShowQr((v) => !v);
+    if (!showQr) setHasViewedQr(true);
   };
 
   const handleReceiptChange = (event: any) => {
@@ -221,11 +212,6 @@ export default function CoursesPage() {
     setReceiptFile(file);
   };
 
-  const remainingCuotas = nextCuotaNeeded != null ? 4 - nextCuotaNeeded : 3;
-  const paymentAllAmount = remainingCuotas * PRICE_PER_MONTH;
-  const payAllLabel = `Pagar todo lo que falta (${paymentAllAmount} Bs)`;
-  const qrNumber = paymentMode === "next" ? 1 : Math.min(remainingCuotas, 3);
-  const qrAmount = qrNumber * PRICE_PER_MONTH;
   const canNotifyPayment = hasViewedQr && Boolean(receiptFile) && !requestingCuota;
 
   if (loading || !user) {
@@ -236,102 +222,13 @@ export default function CoursesPage() {
     );
   }
 
-  // PENDING STATUS: show waiting screen
-  if (status === "pendiente") {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{
-        background: "radial-gradient(circle at 30% 20%, rgba(194,65,12,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(245,158,11,0.05) 0%, transparent 50%)"
-      }}>
-        <div style={{
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 28,
-          padding: "3rem 2.5rem",
-          maxWidth: 480,
-          width: "100%",
-          textAlign: "center",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "1.5rem",
-        }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: "50%",
-            background: "rgba(245,158,11,0.12)",
-            border: "2px solid rgba(245,158,11,0.25)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <Clock3 size={36} color="#f59e0b" />
-          </div>
 
-          <div>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)",
-              borderRadius: 999, padding: "4px 14px", marginBottom: "1rem",
-              color: "#f59e0b", fontSize: 12, fontWeight: 700, letterSpacing: "0.05em",
-            }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b", display: "inline-block", animation: "ping 1.5s ease-in-out infinite" }} />
-              VERIFICACIÓN PENDIENTE
-            </div>
-            <h1 style={{
-              fontSize: "1.8rem", fontWeight: 800, marginBottom: "0.75rem",
-              background: "linear-gradient(135deg,#fff,#94a3b8)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-            }}>
-              Espere por favor
-            </h1>
-            <p style={{ color: "#94a3b8", fontSize: "1rem", lineHeight: 1.7, maxWidth: 380, margin: "0 auto" }}>
-              El administrador está verificando tu pago. Una vez confirmado, tu cuenta será activada y podrás acceder a todos los cursos.
-            </p>
-          </div>
-
-          <div style={{
-            background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 14, padding: "1rem 1.5rem",
-            width: "100%", textAlign: "left",
-          }}>
-            <div style={{ fontSize: 12, color: "#64748b", fontWeight: 600, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Tu cuenta</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Shield size={16} color="#f59e0b" />
-              <span style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 500 }}>{user.name}</span>
-            </div>
-          </div>
-
-          <LogoutButton />
-
-          <p style={{ fontSize: 12, color: "#475569" }}>
-            ¿Tienes dudas? Contacta al administrador.
-          </p>
-        </div>
-
-        <style>{`
-          @keyframes ping {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.5); }
-          }
-        `}</style>
-      </div>
-    );
-  }
 
   const handleContinue = (topicOrder: number) => {
     router.push(`/courses/${topicOrder}`);
   };
 
-  // Determine the status of nextCuota payment
-  const nextCuotaPayment = nextCuotaNeeded != null
-    ? payments.find((p) => p.cuota === nextCuotaNeeded)
-    : null;
-  const nextCuotaStatus = nextCuotaPayment?.status ?? null;
-
-  // Payment banner: show when user has completed all unlocked topics and needs next cuota
-  const allUnlockedPassed = paymentMaxTopic > 0 && topics
-    .filter((t) => t.topicOrder <= paymentMaxTopic && t.topicOrder > 1)
-    .every((t) => t.passed);
-
-  const showPaymentBanner = nextCuotaNeeded != null && (allUnlockedPassed || paymentMaxTopic === 0);
+  const showPaymentBanner = payments.length > 0 && (payments[0].status === "pendiente" || payments[0].status === "rechazado");
 
   return (
     <div className="min-h-screen">
@@ -387,27 +284,25 @@ export default function CoursesPage() {
               </p>
               <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>
                 {canEnroll
-                  ? `Ya puedes inscribirte y elegir tu plan de pago (1, 2 o 3 meses de ${PRICE_PER_MONTH} Bs).`
-                  : "Mira el video y rinde el examen del Tema 1. Después podrás inscribirte."}
+                  ? `Ya puedes inscribirte con el pago único del curso completo (${PRICE_TOTAL} Bs).`
+                  : "Inscríbete ahora con el pago único del curso completo (300 Bs). También puedes ver el video y rendir el examen del Tema 1 gratis antes de inscribirte."}
               </p>
             </div>
-            {canEnroll && (
-              <Link
-                href="/register"
-                className="btn btn-primary"
-                style={{ flexShrink: 0 }}
-              >
-                Inscribirme y pagar
-              </Link>
-            )}
+            <Link
+              href="/register"
+              className="btn btn-primary"
+              style={{ flexShrink: 0 }}
+            >
+              Inscribirme y pagar
+            </Link>
           </div>
         )}
 
-        {/* Payment progress bar */}
-        {status === "activo" && (
+        {/* Payment status */}
+        {status === "activo" && payments.length > 0 && (
           <div style={{
             background: "rgba(255,255,255,0.02)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            border: `1px solid ${payments[0]?.status === "aprobado" ? "rgba(34,197,94,0.25)" : payments[0]?.status === "pendiente" ? "rgba(245,158,11,0.25)" : "rgba(255,255,255,0.08)"}`,
             borderRadius: 16,
             padding: "1rem 1.5rem",
             marginBottom: 24,
@@ -416,47 +311,120 @@ export default function CoursesPage() {
             gap: 16,
             flexWrap: "wrap",
           }}>
-            <CreditCard size={20} color="#818cf8" style={{ flexShrink: 0 }} />
+            <CreditCard size={20} color={payments[0]?.status === "aprobado" ? "#4ade80" : "#818cf8"} style={{ flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 200 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9", marginBottom: 6 }}>
-                Progreso de pagos — {Math.min(payments.filter(p => p.status === "aprobado").length, 3)} de 3 cuotas aprobadas
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#f1f5f9", marginBottom: 4 }}>
+                {paymentMaxTopic >= MAX_TOPIC ? "Pago del curso completo" : `Pago parcial — Módulo I disponible`}
               </div>
-              <div style={{ display: "flex", gap: 6 }}>
-                {[1, 2, 3].map((c) => {
-                  const pay = payments.find(p => p.cuota === c);
-                  const s = pay?.status;
-                  return (
-                    <div key={c} style={{
-                      flex: 1, height: 8, borderRadius: 999,
-                      background: s === "aprobado" ? "#4ade80" : s === "pendiente" ? "#f59e0b" : "rgba(255,255,255,0.1)",
-                      transition: "background 0.3s",
-                    }} title={`Cuota ${c}: ${s ?? "no solicitada"}`} />
-                  );
-                })}
-              </div>
-              <div style={{ display: "flex", gap: 12, marginTop: 6 }}>
-                {[1, 2, 3].map((c) => {
-                  const pay = payments.find(p => p.cuota === c);
-                  const s = pay?.status;
-                  return (
-                    <span key={c} style={{ fontSize: 11, color: s === "aprobado" ? "#4ade80" : s === "pendiente" ? "#f59e0b" : "#475569" }}>
-                      Cuota {c}: {s === "aprobado" ? "Aprobada" : s === "pendiente" ? "En revisión" : "No pagada"}
-                    </span>
-                  );
-                })}
+              <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                {payments[0]?.status === "aprobado"
+                  ? paymentMaxTopic >= MAX_TOPIC
+                    ? "✓ Pago aprobado — tienes acceso a todo el curso"
+                    : "✓ Primer pago aprobado — completa el resto para acceder a todos los módulos"
+                  : payments[0]?.status === "pendiente"
+                    ? "⏳ Pago en revisión por el administrador"
+                    : "✗ Pago rechazado — contacta al administrador"}
               </div>
             </div>
-            <div style={{ fontSize: 14, color: "#64748b", flexShrink: 0 }}>
-               Total: <strong style={{ color: "#f1f5f9" }}>{payments.filter(p => p.status === "aprobado").length * PRICE_PER_MONTH} / {3 * PRICE_PER_MONTH} Bs</strong>
+            <div style={{ fontSize: 14, fontWeight: 700, color: payments[0]?.status === "aprobado" ? "#4ade80" : "#f1f5f9", flexShrink: 0 }}>
+              {payments[0]?.monto ?? PRICE_TOTAL} Bs
             </div>
           </div>
         )}
 
-        {/* Payment banner when cuota needed */}
-        {showPaymentBanner && (
+        {/* Pay remaining banner: user has partial access (old system cuota) */}
+        {status === "activo" && paymentMaxTopic > 0 && paymentMaxTopic < MAX_TOPIC && payments[0]?.status === "aprobado" && (
           <div style={{
-            background: nextCuotaStatus === "pendiente" ? "rgba(245,158,11,0.06)" : "rgba(99,102,241,0.06)",
-            border: `1px solid ${nextCuotaStatus === "pendiente" ? "rgba(245,158,11,0.25)" : "rgba(99,102,241,0.25)"}`,
+            background: "rgba(99,102,241,0.06)",
+            border: "1px solid rgba(99,102,241,0.25)",
+            borderRadius: 16,
+            padding: "1.25rem 1.5rem",
+            marginBottom: 28,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: showQr ? 16 : 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <CreditCard size={22} color="#818cf8" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: "#a5b4fc", marginBottom: 2 }}>Te falta pagar 240 Bs para completar el curso</div>
+                <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                  Ya pagaste el Módulo I (100 Bs). Paga los 240 Bs restantes para acceder a todos los módulos.
+                </div>
+                {paymentMessage && (
+                  <div style={{ marginTop: 8, fontSize: 13, color: "#4ade80" }}>{paymentMessage}</div>
+                )}
+                {receiptError && (
+                  <div style={{ marginTop: 8, fontSize: 13, color: "#f87171" }}>{receiptError}</div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={handleViewQr}
+                className="btn btn-secondary"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+              >
+                {showQr ? "Ocultar QR" : "Ver QR"}
+              </button>
+
+              <label
+                htmlFor="receipt-upload-remaining"
+                className="btn btn-secondary"
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+              >
+                Subir comprobante
+                <input
+                  id="receipt-upload-remaining"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={handleReceiptChange}
+                  className="hidden"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={handlePayRemaining}
+                disabled={!hasViewedQr || !receiptFile || requestingCuota}
+                className="btn btn-primary"
+                style={{ opacity: (!hasViewedQr || !receiptFile || requestingCuota) ? 0.55 : 1, cursor: (!hasViewedQr || !receiptFile || requestingCuota) ? "not-allowed" : "pointer" }}
+              >
+                {requestingCuota ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : null}
+                {requestingCuota ? "Enviando..." : "Ya pagué — Notificar"}
+              </button>
+
+              {receiptFile && (
+                <span style={{ fontSize: 12, color: "#cbd5e1" }}>Archivo: {receiptFile.name}</span>
+              )}
+            </div>
+
+            {showQr && (
+              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Paga 240 Bs con el siguiente QR:</p>
+                <div style={{ width: 180, height: 180, borderRadius: 18, overflow: "hidden" }}>
+                  <img src="/qr_yala2.png" alt="Código QR para pago de 240 Bs" loading="eager" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                </div>
+                <a
+                  href="/qr_yala2.png"
+                  download="qr-pago-restante-240.png"
+                  className="btn btn-secondary flex items-center justify-center gap-2"
+                  style={{ display: "inline-flex", padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
+                >
+                  <Download size={14} />
+                  Descargar QR
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Payment banner when payment is pending or rejected */}
+        {showPaymentBanner && payments.length > 0 && (
+          <div style={{
+            background: payments[0]?.status === "pendiente" ? "rgba(245,158,11,0.06)" : "rgba(248,113,113,0.06)",
+            border: `1px solid ${payments[0]?.status === "pendiente" ? "rgba(245,158,11,0.25)" : "rgba(248,113,113,0.25)"}`,
             borderRadius: 16,
             padding: "1.25rem 1.5rem",
             marginBottom: 28,
@@ -467,171 +435,90 @@ export default function CoursesPage() {
           }}>
             <div style={{
               width: 44, height: 44, borderRadius: "50%",
-              background: nextCuotaStatus === "pendiente" ? "rgba(245,158,11,0.15)" : "rgba(99,102,241,0.15)",
+              background: payments[0]?.status === "pendiente" ? "rgba(245,158,11,0.15)" : "rgba(248,113,113,0.15)",
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
             }}>
-              {nextCuotaStatus === "pendiente"
+              {payments[0]?.status === "pendiente"
                 ? <Clock size={22} color="#f59e0b" />
-                : <CreditCard size={22} color="#818cf8" />}
+                : <AlertCircle size={22} color="#f87171" />}
             </div>
             <div style={{ flex: 1 }}>
-              {nextCuotaStatus === "pendiente" ? (
+              {payments[0]?.status === "pendiente" ? (
                 <>
                   <div style={{ fontWeight: 700, fontSize: 15, color: "#f59e0b", marginBottom: 2 }}>Pago en revisión</div>
                   <div style={{ fontSize: 13, color: "#94a3b8" }}>
-                    Tu solicitud de la {CUOTA_LABELS[nextCuotaNeeded!]} está siendo verificada por el administrador. Te avisaremos cuando sea aprobada.
-                  </div>
-                </>
-              ) : nextCuotaStatus === "rechazado" ? (
-                <>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: "#f87171", marginBottom: 2 }}>Pago rechazado</div>
-                  <div style={{ fontSize: 13, color: "#94a3b8" }}>
-                    Tu pago de la {CUOTA_LABELS[nextCuotaNeeded!]} fue rechazado. Contacta al administrador y vuelve a enviar el comprobante.
+                    Tu pago está siendo verificado por el administrador. Te avisaremos cuando sea aprobado.
                   </div>
                 </>
               ) : (
                 <>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: "#818cf8", marginBottom: 2 }}>
-                    {paymentMaxTopic === 0 ? "Paga tu primera cuota para comenzar" : `¡Completaste el bloque! Paga la siguiente cuota`}
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#f87171", marginBottom: 2 }}>Pago rechazado</div>
+                  <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                    Tu pago fue rechazado. Contacta al administrador.
                   </div>
-                  
                 </>
               )}
               {paymentMessage && (
-                <div style={{ marginTop: 8, fontSize: 13, color: nextCuotaStatus === "rechazado" ? "#f87171" : "#4ade80" }}>
+                <div style={{ marginTop: 8, fontSize: 13, color: payments[0]?.status === "rechazado" ? "#f87171" : "#4ade80" }}>
                   {paymentMessage}
                 </div>
               )}
             </div>
-            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && (
-              <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12, width: "100%", marginBottom: 16 }}>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMode("next")}
-                    className={`btn ${paymentMode === "next" ? "btn-primary" : "btn-secondary"}`}
-                    style={{ width: "100%", justifyContent: "center" }}
-                  >
-                    Pagar siguiente cuota
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMode("full")}
-                    className={`btn ${paymentMode === "full" ? "btn-primary" : "btn-secondary"}`}
-                    style={{ width: "100%", justifyContent: "center" }}
-                  >
-                    {payAllLabel}
-                  </button>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, width: "100%" }}>
-                  <button
-                    type="button"
-                    onClick={handleViewQr}
-                    className="btn btn-secondary"
-                    style={{ width: "100%", justifyContent: "center" }}
-                  >
-                    Ver QR
-                  </button>
-
-                  <label
-                    htmlFor="receipt-upload"
-                    className="btn btn-secondary"
-                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%", cursor: "pointer" }}
-                  >
-                    Subir comprobante
-                    <input
-                      id="receipt-upload"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
-                      onChange={handleReceiptChange}
-                      className="hidden"
-                    />
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => handleRequestPayment(paymentMode === "next" ? nextCuotaNeeded! : 0)}
-                    disabled={!canNotifyPayment}
-                    className="btn btn-primary"
-                    style={{ width: "100%", opacity: canNotifyPayment ? 1 : 0.55, cursor: canNotifyPayment ? "pointer" : "not-allowed" }}
-                  >
-                    {requestingCuota ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : <CreditCard size={16} />}
-                    {requestingCuota ? "Enviando..." : "Ya pagué — Notificar"}
-                  </button>
-                </div>
-              </>
-            )}
-            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && receiptFile && (
-              <p style={{ marginTop: 10, color: "#cbd5e1", fontSize: 13 }}>Archivo seleccionado: {receiptFile.name}</p>
-            )}
-            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && receiptError && (
-              <p style={{ marginTop: 10, color: "#f87171", fontSize: 13 }}>{receiptError}</p>
-            )}
-            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && !showQr && (
-              <p style={{ marginTop: 10, color: "#94a3b8", fontSize: 13 }}>
-                Primero revisa el QR y luego sube tu comprobante para habilitar el botón de notificación.
-              </p>
-            )}
-            {(nextCuotaStatus == null || nextCuotaStatus === "rechazado") && showQr && (
-              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                <p style={{ marginBottom: 2, fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Escanea este QR para pagar Bs. {qrAmount}{paymentMode === "full" ? ` (${qrNumber} cuotas)` : ` por la cuota ${nextCuotaNeeded}`}:</p>
-                <div style={{ width: 180, height: 180, borderRadius: 18, overflow: "hidden" }}>
-                  <img src={`/qr_yala${qrNumber}.png`} alt="Código QR para pago" loading="eager" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
-                </div>
-                <a
-                  href={`/qr_yala${qrNumber}.png`}
-                  download={`qr-pago-${qrNumber}-cuota${qrNumber > 1 ? "s" : ""}.png`}
-                  className="btn btn-secondary flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
-                  style={{ display: "inline-flex", width: "100%", maxWidth: 180, padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
-                >
-                  <Download size={14} />
-                  Descargar QR
-                </a>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Also show "Pay all at once" button if no payments yet */}
-        {status === "activo" && payments.length === 0 && (
+        {/* PENDING STATUS: banner instead of full page */}
+        {status === "pendiente" && (
           <div style={{
-            background: "rgba(99,102,241,0.04)",
-            border: "1px dashed rgba(99,102,241,0.2)",
-            borderRadius: 16, padding: "1rem 1.5rem",
-            marginBottom: 20, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+            background: "rgba(245,158,11,0.06)",
+            border: "1px solid rgba(245,158,11,0.25)",
+            borderRadius: 16,
+            padding: "1.25rem 1.5rem",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            flexWrap: "wrap",
           }}>
-            <AlertCircle size={16} color="#818cf8" />
-            <span style={{ fontSize: 13, color: "#94a3b8", flex: 1 }}>
-              ¿Quieres pagar el curso completo ({3 * PRICE_PER_MONTH} Bs)? Envía el comprobante al <strong style={{ color: "#f1f5f9" }}>71539769</strong> y haz clic en:
-            </span>
-            <button
-              onClick={() => handleRequestPayment(0)}
-              disabled={requestingCuota}
-              style={{
-                display: "flex", alignItems: "center", gap: 8,
-                padding: "9px 18px", borderRadius: 10,
-                background: "rgba(99,102,241,0.15)", border: "1px solid rgba(99,102,241,0.3)",
-                color: "#818cf8", fontSize: 13, fontWeight: 700,
-                cursor: requestingCuota ? "not-allowed" : "pointer",
-                opacity: requestingCuota ? 0.7 : 1, transition: "all 0.2s",
-              }}
-            >
-               <CreditCard size={15} />
-                  Pago completo ({3 * PRICE_PER_MONTH} Bs)
-            </button>
+            <div style={{
+              width: 44, height: 44, borderRadius: "50%",
+              background: "rgba(245,158,11,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            }}>
+              <Clock3 size={22} color="#f59e0b" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: "#f59e0b", marginBottom: 2 }}>Se está verificando su pago</div>
+              <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                El administrador está verificando tu pago. Una vez confirmado, tu cuenta será activada y podrás acceder a todos los cursos.
+              </div>
+            </div>
+            <LogoutButton />
           </div>
         )}
 
-        {status === "activo" && topics.length === 0 ? (
-          <div className="glass-card max-w-2xl">
-            <h2 className="text-2xl font-bold mb-3">Aun no hay temas cargados</h2>
-            <p className="text-slate-400">
-              Tu cuenta ya fue activada, pero todavia no hay contenido disponible en la tabla `topics`.
-            </p>
+        {/* ACTIVE WELCOME: shown when user has no topics yet */}
+        {status === "activo" && topics.length === 0 && (
+          <div style={{
+            background: "rgba(34,197,94,0.06)",
+            border: "1px solid rgba(34,197,94,0.25)",
+            borderRadius: 16,
+            padding: "1.5rem 2rem",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+          }}>
+            <GraduationCap size={32} color="#4ade80" />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, color: "#4ade80", marginBottom: 2 }}>¡Bienvenido al curso!</div>
+              <div style={{ fontSize: 14, color: "#94a3b8" }}>Es hora de aprender. Explora los temas disponibles.</div>
+            </div>
           </div>
-        ) : (
+        )}
+
+        {/* Topics */}
+        {(status === "activo" && topics.length > 0) || status === "prueba" ? (
           <>
             {currentTopic && (
               <div className="glass-card mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -753,7 +640,7 @@ export default function CoursesPage() {
               );
             })}
           </>
-        )}
+        ) : null}
       </main>
 
       <style>{`

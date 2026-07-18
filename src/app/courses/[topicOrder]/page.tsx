@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus, Download } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { LogoutButton } from "@/app/components/LogoutButton";
-import { PRICE_PER_MONTH } from "@/lib/pricing";
+import { PRICE_TOTAL } from "@/lib/pricing";
 
 type TopicDetail = {
   topicOrder: number;
@@ -184,8 +184,8 @@ export default function TopicDetailPage() {
     return 3;
   };
 
-  const paymentCuota = getPaymentCuotaForTopic(Number(params.topicOrder));
-  const paymentAmount = PRICE_PER_MONTH;
+  const paymentCuota = 1;
+  const paymentAmount = PRICE_TOTAL;
   const isNotifyEnabled = showQr && Boolean(receiptFile) && !paymentRequested;
 
   const handleReceiptChange = (event: any) => {
@@ -391,75 +391,8 @@ export default function TopicDetailPage() {
               </div>
               <h1 className="text-3xl font-bold mb-3">Pago requerido</h1>
               <p className="text-slate-400 mb-4">
-                Para acceder al <strong className="text-white">Tema {params.topicOrder}</strong> debes pagar la cuota <strong className="text-white">{paymentCuota}</strong> ({PRICE_PER_MONTH} Bs).
+                Para acceder al <strong className="text-white">Tema {params.topicOrder}</strong> y al resto del curso, completa el pago desde la página de <Link href="/courses" className="text-indigo-400 underline">Mis Cursos</Link>.
               </p>
-              <p className="text-slate-400 mb-6">
-                Primero revisa el QR de pago y sube el comprobante. Luego podrás notificar el pago al administrador.
-              </p>
-
-              <div className="grid gap-3 md:grid-cols-3 mb-6">
-                <button
-                  type="button"
-                  onClick={handleViewQr}
-                  className="btn btn-secondary w-full"
-                >
-                  Ver QR
-                </button>
-
-                <label className="btn btn-secondary w-full cursor-pointer justify-center">
-                  Subir comprobante
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,application/pdf"
-                    onChange={handleReceiptChange}
-                    className="hidden"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={handleNotifyPayment}
-                  disabled={!isNotifyEnabled || paymentRequesting}
-                  className={`btn btn-primary w-full ${(!isNotifyEnabled || paymentRequesting) ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  {paymentRequesting ? "Notificando..." : paymentRequested ? "Notificado" : "Notificar pago"}
-                </button>
-              </div>
-
-              {receiptFile && (
-                <p className="text-slate-300 mb-2">Archivo seleccionado: {receiptFile.name}</p>
-              )}
-              {receiptError && (
-                <p className="text-sm text-red-400 mb-2">{receiptError}</p>
-              )}
-              {paymentNotice && (
-                <p className="text-sm text-slate-300 mb-4">{paymentNotice}</p>
-              )}
-
-              {showQr && (
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-5 mb-6">
-                  <p className="text-sm uppercase tracking-wide text-slate-400 mb-3">Código QR de pago</p>
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
-                      <div className="h-48 w-48">
-                        <img src="/qr_yala1.png" alt={`Código QR para pago de ${PRICE_PER_MONTH} Bs`} loading="eager" className="h-full w-full object-contain" />
-                      </div>
-                    </div>
-                    <a
-                      href="/qr_yala1.png"
-                      download={`qr-pago-cuota-${paymentCuota}.png`}
-                      className="btn btn-secondary flex items-center justify-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
-                      style={{ padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
-                    >
-                      <Download className="w-4 h-4" />
-                      Descargar QR
-                    </a>
-                    <p className="text-slate-300 text-sm text-center max-w-lg">
-                      Escanea el código QR para pagar con Tigo Money, QR Simple o transferencia bancaria. El monto por cuota es <strong className="text-white">Bs. {paymentAmount}</strong>.
-                    </p>
-                  </div>
-                </div>
-              )}
 
               <p className="text-sm text-slate-500">
                 También puedes enviar tu comprobante por WhatsApp al <strong className="text-white">71539769</strong> si lo prefieres.

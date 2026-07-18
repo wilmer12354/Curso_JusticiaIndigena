@@ -1,1 +1,1 @@
-export const PRICE_PER_MONTH = 100;
+export const PRICE_TOTAL = 300;

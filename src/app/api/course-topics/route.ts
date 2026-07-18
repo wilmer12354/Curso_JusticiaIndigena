@@ -105,15 +105,7 @@ export async function GET(request: NextRequest) {
 
     const currentTopic = topics.find((topic) => topic.isCurrent) ?? topics.find((topic) => topic.unlocked) ?? null;
 
-    const nextCuotaNeeded = isTrial
-      ? null
-      : paymentMaxTopic === 0
-        ? 1
-        : paymentMaxTopic === 7
-          ? 2
-          : paymentMaxTopic === 15
-            ? 3
-            : null;
+    const nextCuotaNeeded = isTrial || paymentMaxTopic > 0 ? null : 1;
 
     return NextResponse.json({
       topics,

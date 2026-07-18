@@ -6,15 +6,15 @@ import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import Swal from "sweetalert2";
 import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload, Download } from "lucide-react";
-import { getAuthCache } from "@/lib/auth-cache";
-import { PRICE_PER_MONTH } from "@/lib/pricing";
+import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
+import { PRICE_TOTAL } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
 
 const MAX_RECEIPT_BYTES = 5.5 * 1024 * 1024;
 const RECEIPT_ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 
-type PaymentMonths = 1 | 2 | 3;
+type PaymentMonths = 3;
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function RegisterPage() {
   const [certificatePhotoFile, setCertificatePhotoFile] = useState<File | null>(null);
   const [certificatePhotoPreviewUrl, setCertificatePhotoPreviewUrl] = useState<string | null>(null);
   const [certificatePhotoError, setCertificatePhotoError] = useState("");
-  const [paymentMonths, setPaymentMonths] = useState<PaymentMonths>(1);
+  const [paymentMonths] = useState<PaymentMonths>(3);
   const [accessCheck, setAccessCheck] = useState<"loading" | "allowed">("loading");
 
   useEffect(() => {
@@ -98,19 +98,7 @@ export default function RegisterPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const selectPaymentPlan = (m: PaymentMonths) => {
-    if (m !== paymentMonths) {
-      setReceiptFile(null);
-      setReceiptError("");
-      setReceiptPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return null;
-      });
-    }
-    setPaymentMonths(m);
-  };
-
-  const totalBs = paymentMonths * PRICE_PER_MONTH;
+  const totalBs = PRICE_TOTAL;
 
   useEffect(() => {
     return () => {
@@ -260,10 +248,11 @@ export default function RegisterPage() {
         throw new Error(msg);
       }
 
-      // Verificar rol y redirigir
+      // Verificar rol, actualizar caché y redirigir
       const roleRes = await fetch(`/api/user-role?email=${encodeURIComponent(user.email!)}`);
       if (roleRes.ok) {
         const data = await roleRes.json();
+        setAuthCache({ email: user.email!, role: data.role ?? "student", name: (name || user.displayName) ?? "", status: data.status });
         if (data.role === "admin") {
           router.push("/admin");
         } else {
@@ -320,7 +309,7 @@ export default function RegisterPage() {
           <div className="register-card-header">
             <h1 className="register-title">Inscribirme al curso</h1>
             <p className="register-subtitle">
-              Completaste la prueba del Tema 1. Ahora completa tus datos y elige tu plan de pago (1, 2 o 3 meses de {PRICE_PER_MONTH} Bs).
+              Completaste la prueba del Tema 1. Ahora completa tus datos y realiza el pago único del curso completo ({PRICE_TOTAL} Bs).
             </p>
           </div>
 
@@ -504,35 +493,10 @@ export default function RegisterPage() {
               Pago del Curso
             </h2>
 
-            <p className="register-label" style={{ marginBottom: 8 }}>
-              ¿Cuántos meses estás pagando en este comprobante?
-            </p>
             <p className="register-google-desc" style={{ marginBottom: 14 }}>
-              Cada mes cuesta <strong className="text-slate-200">{PRICE_PER_MONTH} Bs</strong>. El administrador revisará el comprobante y{" "}
-              <strong className="text-slate-200">aprobará cada mes por separado</strong> para evitar errores si el monto no coincide.
+              El curso completo tiene un costo único de <strong className="text-slate-200">{PRICE_TOTAL} Bs</strong>.
+              El administrador revisará tu comprobante y al aprobarlo tendrás acceso a todo el curso.
             </p>
-
-            <div className="register-plan-grid">
-              {(
-                [
-                  { m: 1 as const, title: "1 mes", hint: "Solo primer bloque del curso" },
-                  { m: 2 as const, title: "2 meses", hint: `Dos bloques (${2 * PRICE_PER_MONTH} Bs en total)` },
-                  { m: 3 as const, title: "3 meses (completo)", hint: `Curso completo (${3 * PRICE_PER_MONTH} Bs en total) + Documentos únicos de jurisdicción` },
-                ] as const
-              ).map(({ m, title, hint }) => (
-                <button
-                  key={m}
-                  type="button"
-                  disabled={step === "loading"}
-                  onClick={() => selectPaymentPlan(m)}
-                  className={`register-plan-option ${paymentMonths === m ? "register-plan-option-active" : ""}`}
-                >
-                  <span className="register-plan-title">{title}</span>
-                  <span className="register-plan-price">{m * PRICE_PER_MONTH} Bs</span>
-                  <span className="register-plan-hint">{hint}</span>
-                </button>
-              ))}
-            </div>
 
             <div className="register-qr-box">
               <div className="register-qr-badge">
@@ -544,7 +508,7 @@ export default function RegisterPage() {
               </p>
               <div className="register-qr-image-wrapper">
                 <Image
-                  src={`/qr_yala${paymentMonths}.png`}
+                  src="/qr_yala3.png"
                   alt={`Código QR para pago de ${totalBs} Bs`}
                   width={220}
                   height={220}
@@ -553,8 +517,8 @@ export default function RegisterPage() {
                 />
               </div>
               <a
-                href={`/qr_yala${paymentMonths}.png`}
-                download={`qr-pago-cepabol-${paymentMonths}-mes${paymentMonths === 1 ? "" : "es"}.png`}
+                href="/qr_yala3.png"
+                download={`qr-pago-cepabol-3-meses.png`}
                 className="btn btn-secondary flex items-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
                 style={{ padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
               >
@@ -567,7 +531,7 @@ export default function RegisterPage() {
               </div>
               <p className="register-qr-note">
                 Transfiere exactamente <strong className="text-slate-300">{totalBs} Bs</strong>{" "}
-                ({paymentMonths === 1 ? "1 mes" : `${paymentMonths} meses`}). Guarda el comprobante para adjuntarlo abajo.
+                (curso completo). Guarda el comprobante para adjuntarlo abajo.
               </p>
             </div>
           </section>
@@ -601,7 +565,7 @@ export default function RegisterPage() {
             {hasPaid && (
               <div className="mb-4 space-y-3">
                 <div className="p-3 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm font-medium border border-green-200 dark:border-green-800">
-                  Adjunta el comprobante que respalde <strong className="text-green-900 dark:text-green-100">{totalBs} Bs</strong> ({paymentMonths === 1 ? "1 mes" : `${paymentMonths} meses`}). Opcionalmente también puedes enviarlo por WhatsApp al{" "}
+                  Adjunta el comprobante que respalde <strong className="text-green-900 dark:text-green-100">{totalBs} Bs</strong> (curso completo). Opcionalmente también puedes enviarlo por WhatsApp al{" "}
                   <strong className="text-green-900 dark:text-green-100 font-bold">71539769</strong>.
                 </div>
                 <label className="register-receipt-label">

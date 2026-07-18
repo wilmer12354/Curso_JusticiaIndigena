@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, ensureCourseTables, initDb } from "@/lib/db";
 import { verifyAdminRequest } from "@/lib/verify-admin";
+import { deletePublicComprobanteIfExists } from "@/lib/comprobantes";
 
 // PATCH update user (name, email, role, image, status)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -55,7 +56,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-// DELETE user
+// DELETE user (cascading: removes related records and Blob files)
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const unauthorized = await verifyAdminRequest(req);
@@ -63,10 +64,38 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     await initDb();
     const { id } = await params;
-    await db.execute({
-      sql: "DELETE FROM users WHERE id = ?",
+
+    // 1. Fetch user data to get Blob URLs
+    const userResult = await db.execute({
+      sql: "SELECT registration_receipt, certificate_photo FROM users WHERE id = ?",
       args: [id],
     });
+    const user = userResult.rows[0] as { registration_receipt?: string; certificate_photo?: string } | undefined;
+
+    // 2. Fetch payment receipt URLs
+    const paymentsResult = await db.execute({
+      sql: "SELECT payment_receipt FROM payments WHERE user_id = ?",
+      args: [id],
+    });
+
+    // 3. Delete Blob files
+    if (user) {
+      await deletePublicComprobanteIfExists(user.registration_receipt);
+      await deletePublicComprobanteIfExists(user.certificate_photo);
+    }
+    for (const row of paymentsResult.rows) {
+      const p = row as { payment_receipt?: string };
+      await deletePublicComprobanteIfExists(p.payment_receipt);
+    }
+
+    // 4. Delete related rows
+    await db.execute({ sql: "DELETE FROM payments WHERE user_id = ?", args: [id] });
+    await db.execute({ sql: "DELETE FROM progress WHERE user_id = ?", args: [id] });
+    await db.execute({ sql: "DELETE FROM trial_feedback WHERE user_id = ?", args: [id] });
+
+    // 5. Delete user
+    await db.execute({ sql: "DELETE FROM users WHERE id = ?", args: [id] });
+
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error(e);

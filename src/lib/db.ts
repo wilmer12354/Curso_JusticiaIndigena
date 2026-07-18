@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { CUOTA_MAX_TOPIC } from "./modulos";
-import { PRICE_PER_MONTH } from "./pricing";
+import { PRICE_TOTAL } from "./pricing";
 
 const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -77,39 +77,39 @@ export async function initDb() {
   return initPromise;
 }
 
-/** Registra cuotas en revisión al inscribirse (100 Bs por mes). El admin aprueba cada cuota por separado. */
+/** Registra un solo pago pendiente por el curso completo. */
 export async function insertEnrollmentPendingPayments(
   userId: string,
-  months: 1 | 2 | 3
+  _months: 1 | 2 | 3
 ): Promise<void> {
-  for (let c = 1; c <= months; c++) {
-    const exists = await db.execute({
-      sql: `SELECT id FROM payments WHERE user_id = ? AND cuota = ?`,
-      args: [userId, c],
-    });
-    if (exists.rows.length > 0) continue;
-    await db.execute({
-      sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, ?, 'pendiente')`,
-      args: [userId, c, PRICE_PER_MONTH],
-    });
-  }
+  const exists = await db.execute({
+    sql: `SELECT id FROM payments WHERE user_id = ? AND cuota = ?`,
+    args: [userId, 1],
+  });
+  if (exists.rows.length > 0) return;
+  await db.execute({
+    sql: `INSERT INTO payments (user_id, cuota, monto, status) VALUES (?, ?, ?, 'pendiente')`,
+    args: [userId, 1, PRICE_TOTAL],
+  });
 }
 
 /**
  * Returns the maximum topic order a user can access based on approved payments.
- * Cuota 1 (approved) → topics 1-7
- * Cuota 2 (approved) → topics 8-15
- * Cuota 3 (approved) → topics 16+ (all remaining)
+ * Pago de 300 Bs (nuevo sistema) → acceso completo.
+ * Pagos parciales del sistema anterior (100 Bs c/u) → acceso por cuotas.
  */
 export async function getPaymentMaxTopic(userId: string): Promise<number> {
   const result = await db.execute({
-    sql: `SELECT cuota FROM payments WHERE user_id = ? AND status = 'aprobado' ORDER BY cuota ASC`,
+    sql: `SELECT cuota, monto FROM payments WHERE user_id = ? AND status = 'aprobado' ORDER BY cuota ASC`,
     args: [userId],
   });
 
+  const hasFullPayment = result.rows.some((r) => Number(r.monto) === PRICE_TOTAL);
+  if (hasFullPayment) return CUOTA_MAX_TOPIC[3];
+
   const approvedCuotas = new Set(result.rows.map((r) => Number(r.cuota)));
 
-  if (approvedCuotas.has(3) || approvedCuotas.size === 3) return CUOTA_MAX_TOPIC[3];
+  if (approvedCuotas.has(3) || approvedCuotas.size >= 3) return CUOTA_MAX_TOPIC[3];
   if (approvedCuotas.has(2)) return CUOTA_MAX_TOPIC[2];
   if (approvedCuotas.has(1)) return CUOTA_MAX_TOPIC[1];
   return 0;

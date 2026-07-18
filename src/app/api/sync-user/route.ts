@@ -5,7 +5,7 @@ import {
   deletePublicComprobanteIfExists,
   saveCertificatePhoto,
 } from "@/lib/comprobantes";
-import { PRICE_PER_MONTH } from "@/lib/pricing";
+import { PRICE_TOTAL } from "@/lib/pricing";
 
 type ParsedBody = {
   id: string;
@@ -88,9 +88,9 @@ export async function POST(request: Request) {
     const isTrialUser = existingStatus === "prueba";
 
     if (!isAdmin) {
-      if (![1, 2, 3].includes(enrollmentMonths)) {
+      if (enrollmentMonths !== 3) {
         return NextResponse.json(
-          { error: `Indica cuántos meses pagaste: 1, 2 o 3 (${PRICE_PER_MONTH} Bs por mes).` },
+          { error: `El curso completo cuesta ${PRICE_TOTAL} Bs (pago único).` },
           { status: 400 }
         );
       }
@@ -235,8 +235,8 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!isAdmin && [1, 2, 3].includes(enrollmentMonths)) {
-      await insertEnrollmentPendingPayments(id, enrollmentMonths as 1 | 2 | 3);
+    if (!isAdmin && enrollmentMonths === 3) {
+      await insertEnrollmentPendingPayments(id, 3);
     }
 
     return NextResponse.json({ success: true });

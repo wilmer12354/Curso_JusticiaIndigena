@@ -78,15 +78,22 @@ export function AuthButtons() {
       if (!data.exists) {
         await auth.signOut();
 
-        Swal.fire({
+        const result = await Swal.fire({
           icon: "info",
           title: "Aún no tienes cuenta",
           text: "Usa «Probar gratis» para conocer el Tema 1. Después del examen podrás inscribirte.",
           confirmButtonText: "Entendido",
+          showDenyButton: true,
+          denyButtonText: "Probar gratis",
           background: "#111827",
           color: "#fff",
           confirmButtonColor: "#2563eb",
+          denyButtonColor: "#ea580c",
         });
+
+        if (result.isDenied) {
+          handleTryFree();
+        }
 
         return;
       }

@@ -188,7 +188,25 @@ export default function LandingPage() {
                 alt="Logo CEPABOL"
                 className="w-16 h-16 md:w-20 md:h-20 object-contain rounded-full bg-white/10 p-1 backdrop-blur-sm"
               />
-              <span className="text-3xl md:text-4xl font-bold tracking-tight text-slate-400">CEPABOL</span>
+
+              <div className="flex flex-col">
+                <a
+                  href="https://cepabol.noticias.bo"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-3xl md:text-4xl font-bold tracking-tight text-slate-400 hover:text-slate-200 transition-colors cursor-pointer"
+                >
+                  CEPABOL
+                </a>
+
+                <span className="text-xs md:text-xl text-slate-100">
+                  NIT: 2448391013
+                </span>
+
+                <span className="text-xs md:text-xl text-slate-100">
+                  Matrícula de Comercio: 00413355
+                </span>
+              </div>
             </div>
 
             <div className="relative max-w-4xl mx-auto">
@@ -328,7 +346,7 @@ export default function LandingPage() {
                 "La Cosa Juzgada y mecanismos de ejecución de la sentencia de la JIOC (Parte 2)",
                 "Pluralismo Jurídico y Marco Constitucional.",
                 "Tribunal Constitucional y la Justicia Indígena Originaria Campesina", ,
-                "Fuentes del Derecho Indígena Normas, Uso, Prácticas y Costumbres",
+                "Autoridades originarias, territorialidad, principios  de la democracia comunitaria y su reconstitución",
                 "Estudio de Casos Reales",
                 "Procedimientos de la Justicia Indígena.",
                 "Litigio Estratégico en el Ámbito Internacional."
@@ -343,7 +361,9 @@ export default function LandingPage() {
               topics: [
                 "La minería y los pueblos originarios.",
                 "Catastro Rural - INRA",
-                "Más proximamente...",
+                "Conflicto de competencias jurisdiccionales",
+                "Inclusión y dignidad indígena",
+                "Historia de las naciones indígenas"
               ],
             },
           ].map(({ icon: Icon, color, title, topics }) => (

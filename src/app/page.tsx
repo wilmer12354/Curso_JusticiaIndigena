@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Shield, BookOpen, Scale, Users, ChevronDown, Star, Clock, Award, X, HelpCircle, WifiOff, Building2, Monitor, Globe, Package } from "lucide-react";
+import { Shield, BookOpen, Scale, Users, ChevronDown, Star, Clock, Award, X, HelpCircle, WifiOff, Building2, Monitor, Globe, Package, Video } from "lucide-react";
 import { AuthButtons } from "./components/AuthButtons";
 import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
 import anime from "animejs";
@@ -14,6 +14,7 @@ export default function LandingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const aboutRef = useRef<HTMLElement>(null);
   const heroBodyRef = useRef<HTMLDivElement>(null);
 
@@ -248,26 +249,46 @@ export default function LandingPage() {
               Modalidades
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-5xl mx-auto">
               {[
                 { href: "/modalidades/presencial", icon: Building2, label: "Presencial", desc: "Clases en el Edificio Rojas" },
                 { href: "/modalidades/virtual", icon: Monitor, label: "Virtual", desc: "En vivo con acceso a internet" },
                 { href: "/modalidades/en-linea", icon: Globe, label: "En Línea", desc: "Prueba gratis y examen en plataforma" },
                 { href: "/modalidades/a-distancia", icon: Package, label: "A Distancia", desc: "USB con todo el contenido" },
-              ].map(({ href, icon: Icon, label, desc }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="group relative bg-white/10 backdrop-blur-xl border border-primary/30 rounded-2xl py-6 px-5 hover:bg-white/15 hover:border-primary/50 transition-all duration-500 hover:-translate-y-1 hover:scale-105 text-center shadow-lg shadow-primary/20"
-                >
-                  <div className="absolute inset-0 rounded-2xl opacity-30 bg-gradient-to-br from-primary/10 to-transparent" />
-                  <div className="relative inline-flex p-4 rounded-xl mb-4 bg-primary/20 text-orange-400">
-                    <Icon className="w-8 h-8" />
-                  </div>
-                  <h3 className="relative text-white font-bold text-xl mb-2">{label}</h3>
-                  <p className="relative text-slate-300 text-sm font-medium">{desc}</p>
-                </Link>
-              ))}
+                { icon: Video, label: "Video Promocional", desc: "Video de presentación del curso", modal: true },
+              ].map((item) => {
+                if (item.modal) {
+                  return (
+                    <button
+                      key="video-promocional"
+                      onClick={() => setShowVideoModal(true)}
+                      className="group relative bg-white/10 backdrop-blur-xl border-2 border-orange-500/60 rounded-2xl py-6 px-5 hover:bg-white/15 hover:border-orange-500 transition-all duration-500 hover:-translate-y-1 hover:scale-105 text-center shadow-lg shadow-primary/20 shadow-[0_0_20px_rgba(249,115,22,0.3)] w-full"
+                    >
+                      <div className="absolute inset-0 rounded-2xl opacity-30 bg-gradient-to-br from-primary/10 to-transparent" />
+                      <div className="relative inline-flex p-4 rounded-xl mb-4 bg-primary/20 text-orange-400">
+                        <Video className="w-8 h-8" />
+                      </div>
+                      <h3 className="relative text-white font-bold text-xl mb-2">{item.label}</h3>
+                      <p className="relative text-slate-300 text-sm font-medium">{item.desc}</p>
+                    </button>
+                  );
+                }
+                const { href, icon: Icon, label, desc } = item as { href: string; icon: any; label: string; desc: string };
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="group relative bg-white/10 backdrop-blur-xl border border-primary/30 rounded-2xl py-6 px-5 hover:bg-white/15 hover:border-primary/50 transition-all duration-500 hover:-translate-y-1 hover:scale-105 text-center shadow-lg shadow-primary/20"
+                  >
+                    <div className="absolute inset-0 rounded-2xl opacity-30 bg-gradient-to-br from-primary/10 to-transparent" />
+                    <div className="relative inline-flex p-4 rounded-xl mb-4 bg-primary/20 text-orange-400">
+                      <Icon className="w-8 h-8" />
+                    </div>
+                    <h3 className="relative text-white font-bold text-xl mb-2">{label}</h3>
+                    <p className="relative text-slate-300 text-sm font-medium">{desc}</p>
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Stats rápidas */}
@@ -502,7 +523,7 @@ export default function LandingPage() {
                   <div className="aspect-video">
                     <iframe
                       className="w-full h-full"
-                      src="https://www.youtube.com/embed/Ay_NvZORZvo"
+                      src="https://www.youtube.com/embed/f4cpkTbtHjo"
                       title="Presentación del curso"
                       allowFullScreen
                     />
@@ -689,6 +710,45 @@ export default function LandingPage() {
               >
                 Entendido
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── VIDEO PROMOCIONAL MODAL ── */}
+      {showVideoModal && (
+        <div
+          onClick={() => setShowVideoModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-6"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-5xl xl:max-w-7xl rounded-2xl border border-white/10 bg-[#111115] p-8 shadow-2xl"
+          >
+            <button
+              onClick={() => setShowVideoModal(false)}
+              className="absolute top-4 right-4 z-10 text-slate-500 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                <Video className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white">
+                Video Promocional
+              </h3>
+            </div>
+
+            <div className="aspect-video rounded-xl overflow-hidden bg-black">
+              <video
+                className="w-full h-full"
+                src="/video-promocional.mp4"
+                controls
+                autoPlay
+                muted
+              />
             </div>
           </div>
         </div>

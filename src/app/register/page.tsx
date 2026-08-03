@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import Swal from "sweetalert2";
-import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload, Download } from "lucide-react";
+import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload } from "lucide-react";
 import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
 import { PRICE_TOTAL } from "@/lib/pricing";
-import Image from "next/image";
 import Link from "next/link";
 
 const MAX_RECEIPT_BYTES = 5.5 * 1024 * 1024;
@@ -504,31 +503,27 @@ export default function RegisterPage() {
                 Pago Seguro
               </div>
               <p className="register-qr-instruction">
-                Escanea el código QR para realizar tu pago por <strong>Tigo Money, QR Simple o transferencia bancaria</strong>.
+                Realiza tu pago por <strong>transferencia bancaria</strong> a la siguiente cuenta.
               </p>
-              <div className="register-qr-image-wrapper">
-                <Image
-                  src="/qr_yala3.png"
-                  alt={`Código QR para pago de ${totalBs} Bs`}
-                  width={220}
-                  height={220}
-                  priority
-                  className="register-qr-image"
-                />
+              <div className="bank-card">
+                <div className="bank-row">
+                  <span className="bank-label">Banco</span>
+                  <span className="bank-value">Banco Unión</span>
+                </div>
+                <div className="bank-row">
+                  <span className="bank-label">Nº de cuenta</span>
+                  <span className="bank-value">30362060</span>
+                </div>
+                <div className="bank-row">
+                  <span className="bank-label">Titular</span>
+                  <span className="bank-value">DAVID TICONA BALBOA</span>
+                </div>
+                <div className="bank-row">
+                  <span className="bank-label">CI</span>
+                  <span className="bank-value">2448391</span>
+                </div>
               </div>
-              <a
-                href="/qr_yala3.png"
-                download={`qr-pago-cepabol-3-meses.png`}
-                className="btn btn-secondary flex items-center gap-2 hover:bg-white/5 transition-all cursor-pointer"
-                style={{ padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
-              >
-                <Download className="w-4 h-4" />
-                Descargar QR
-              </a>
-              <div className="register-qr-amount">
-                <span className="amount-label">Monto a pagar (según tu elección)</span>
-                {/*<span className="amount-value">Bs. {totalBs}</span>*/}
-              </div>
+              
               <p className="register-qr-note">
                 Transfiere exactamente <strong className="text-slate-300">{totalBs} Bs</strong>{" "}
                 (curso completo). Guarda el comprobante para adjuntarlo abajo.

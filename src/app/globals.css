@@ -467,18 +467,6 @@ p {
   color: #e2e8f0;
 }
 
-.register-qr-image-wrapper {
-  padding: 0.75rem;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 0 40px rgba(245, 158, 11, 0.15);
-}
-
-.register-qr-image {
-  display: block;
-  border-radius: 8px;
-}
-
 .register-qr-amount {
   display: flex;
   align-items: center;
@@ -504,6 +492,51 @@ p {
   color: #64748b !important;
   max-width: 100% !important;
   line-height: 1.5 !important;
+}
+
+/* Bank data card */
+.bank-card {
+  width: 100%;
+  max-width: 360px;
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  text-align: left;
+}
+
+.bank-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bank-label {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.bank-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f59e0b;
+  word-break: break-word;
+}
+
+.bank-card--dark {
+  background: rgba(245,158,11,0.08);
+  border-color: rgba(245,158,11,0.35);
+}
+
+.bank-card--dark .bank-value {
+  color: #fbbf24;
 }
 
 .register-plan-grid {

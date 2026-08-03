@@ -6,7 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
 
-import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2, Sparkles, Download } from "lucide-react";
 import Link from "next/link";
 import { LogoutButton } from "../components/LogoutButton";
 import { MODULOS, MAX_TOPIC } from "@/lib/modulos";
@@ -54,8 +54,8 @@ export default function CoursesPage() {
   const [paymentMaxTopic, setPaymentMaxTopic] = useState<number>(0);
   const [requestingCuota, setRequestingCuota] = useState(false);
   const [paymentMessage, setPaymentMessage] = useState("");
-  const [showBankData, setShowBankData] = useState(false);
-  const [hasViewedBankData, setHasViewedBankData] = useState(false);
+  const [showPaymentMethods, setShowPaymentMethods] = useState(false);
+  const [hasViewedPaymentMethods, setHasViewedPaymentMethods] = useState(false);
 
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptError, setReceiptError] = useState("");
@@ -167,7 +167,7 @@ export default function CoursesPage() {
       if (res.ok) {
         setPaymentMessage(data.message ?? "Solicitud enviada. El administrador revisará tu pago.");
         setReceiptFile(null);
-        setShowBankData(false);
+        setShowPaymentMethods(false);
         const pr = await fetch(`/api/payments?userId=${encodeURIComponent(user.id)}`);
         if (pr.ok) {
           const pd = await pr.json();
@@ -183,9 +183,9 @@ export default function CoursesPage() {
     }
   };
 
-  const handleViewBankData = () => {
-    setShowBankData((v) => !v);
-    if (!showBankData) setHasViewedBankData(true);
+  const handleViewPaymentMethods = () => {
+    setShowPaymentMethods((v) => !v);
+    if (!showPaymentMethods) setHasViewedPaymentMethods(true);
   };
 
   const handleReceiptChange = (event: any) => {
@@ -212,7 +212,7 @@ export default function CoursesPage() {
     setReceiptFile(file);
   };
 
-  const canNotifyPayment = hasViewedBankData && Boolean(receiptFile) && !requestingCuota;
+  const canNotifyPayment = hasViewedPaymentMethods && Boolean(receiptFile) && !requestingCuota;
 
   if (loading || !user) {
     return (
@@ -341,7 +341,7 @@ export default function CoursesPage() {
             padding: "1.25rem 1.5rem",
             marginBottom: 28,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: showBankData ? 16 : 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: showPaymentMethods ? 16 : 0 }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(99,102,241,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <CreditCard size={22} color="#818cf8" />
               </div>
@@ -362,11 +362,11 @@ export default function CoursesPage() {
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
               <button
                 type="button"
-                onClick={handleViewBankData}
+                onClick={handleViewPaymentMethods}
                 className="btn btn-secondary"
                 style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
               >
-                {showBankData ? "Ocultar datos bancarios" : "Ver datos bancarios"}
+                {showPaymentMethods ? "Ocultar métodos de pago" : "Ver métodos de pago"}
               </button>
 
               <label
@@ -387,9 +387,9 @@ export default function CoursesPage() {
               <button
                 type="button"
                 onClick={handlePayRemaining}
-                disabled={!hasViewedBankData || !receiptFile || requestingCuota}
+                disabled={!hasViewedPaymentMethods || !receiptFile || requestingCuota}
                 className="btn btn-primary"
-                style={{ opacity: (!hasViewedBankData || !receiptFile || requestingCuota) ? 0.55 : 1, cursor: (!hasViewedBankData || !receiptFile || requestingCuota) ? "not-allowed" : "pointer" }}
+                style={{ opacity: (!hasViewedPaymentMethods || !receiptFile || requestingCuota) ? 0.55 : 1, cursor: (!hasViewedPaymentMethods || !receiptFile || requestingCuota) ? "not-allowed" : "pointer" }}
               >
                 {requestingCuota ? <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> : null}
                 {requestingCuota ? "Enviando..." : "Ya pagué — Notificar"}
@@ -400,25 +400,50 @@ export default function CoursesPage() {
               )}
             </div>
 
-            {showBankData && (
-              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Paga los 240 Bs restantes por transferencia bancaria a:</p>
-                <div className="bank-card bank-card--dark" style={{ width: "100%", maxWidth: 360 }}>
-                  <div className="bank-row">
-                    <span className="bank-label">Banco</span>
-                    <span className="bank-value">Banco Unión</span>
+            {showPaymentMethods && (
+              <div style={{ marginTop: 16, padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(15,23,42,0.75)", display: "flex", flexDirection: "column", gap: 12 }}>
+                <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center" }}>Elige el método de pago que prefieras para los 240 Bs restantes:</p>
+                <div className="payment-options">
+                  <div className="payment-option">
+                    <h3 className="payment-option-title">Opción 1 · Pago con QR</h3>
+                    <p style={{ fontSize: 13, color: "#94a3b8", textAlign: "center" }}>
+                      Escanea el código QR para pagar por <strong style={{ color: "#e2e8f0" }}>Tigo Money o QR Simple</strong>.
+                    </p>
+                    <div style={{ width: 180, height: 180, borderRadius: 18, overflow: "hidden", background: "white", padding: 8 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/qr_yala2.png" alt="Código QR para pago de 240 Bs" loading="eager" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
+                    </div>
+                    <a
+                      href="/qr_yala2.png"
+                      download="qr-pago-restante-240.png"
+                      className="btn btn-secondary flex items-center justify-center gap-2"
+                      style={{ display: "inline-flex", padding: "8px 16px", fontSize: 13, borderRadius: 12 }}
+                    >
+                      <Download size={14} />
+                      Descargar QR
+                    </a>
                   </div>
-                  <div className="bank-row">
-                    <span className="bank-label">Nº de cuenta</span>
-                    <span className="bank-value">30362060</span>
-                  </div>
-                  <div className="bank-row">
-                    <span className="bank-label">Titular</span>
-                    <span className="bank-value">DAVID TICONA BALBOA</span>
-                  </div>
-                  <div className="bank-row">
-                    <span className="bank-label">CI</span>
-                    <span className="bank-value">2448391</span>
+
+                  <div className="payment-option">
+                    <h3 className="payment-option-title">Opción 2 · Transferencia bancaria</h3>
+                    <div className="bank-card bank-card--dark">
+                      <div className="bank-row">
+                        <span className="bank-label">Banco</span>
+                        <span className="bank-value">Banco Unión</span>
+                      </div>
+                      <div className="bank-row">
+                        <span className="bank-label">Nº de cuenta</span>
+                        <span className="bank-value">30362060</span>
+                      </div>
+                      <div className="bank-row">
+                        <span className="bank-label">Titular</span>
+                        <span className="bank-value">DAVID TICONA BALBOA</span>
+                      </div>
+                      <div className="bank-row">
+                        <span className="bank-label">CI</span>
+                        <span className="bank-value">2448391</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

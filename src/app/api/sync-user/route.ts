@@ -20,6 +20,7 @@ type ParsedBody = {
   enrollmentMonths: number;
   receiptFile: File | null;
   certificatePhotoFile: File | null;
+  trialId: string;
 };
 
 async function parseRequest(request: Request): Promise<ParsedBody> {
@@ -44,6 +45,7 @@ async function parseRequest(request: Request): Promise<ParsedBody> {
       enrollmentMonths: Number(form.get("enrollmentMonths")),
       receiptFile,
       certificatePhotoFile,
+      trialId: String(form.get("trialId") ?? "").trim(),
     };
   }
 
@@ -61,6 +63,7 @@ async function parseRequest(request: Request): Promise<ParsedBody> {
     enrollmentMonths: Number(body.enrollmentMonths),
     receiptFile: null,
     certificatePhotoFile: null,
+    trialId: String(body.trialId ?? "").trim(),
   };
 }
 
@@ -70,22 +73,14 @@ export async function POST(request: Request) {
 
     const parsed = await parseRequest(request);
 
-    const { id, name, email, image, phone, age, jobTitle, educationLevel, address, enrollmentMonths, receiptFile, certificatePhotoFile } = parsed;
+    const { id, name, email, image, phone, age, jobTitle, educationLevel, address, enrollmentMonths, receiptFile, certificatePhotoFile, trialId } = parsed;
 
     if (!id || !email) {
       return NextResponse.json({ error: "Missing user data" }, { status: 400 });
     }
 
-    const existingUser = await db.execute({
-      sql: "SELECT * FROM users WHERE email = ?",
-      args: [email],
-    });
-
     const adminEmails = (process.env.ADMIN_EMAIL ?? "").split(",").map((e) => e.trim());
     const isAdmin = adminEmails.includes(email);
-    const wasExisting = existingUser.rows.length > 0;
-    const existingStatus = wasExisting ? String(existingUser.rows[0].status ?? "") : "";
-    const isTrialUser = existingStatus === "prueba";
 
     if (!isAdmin) {
       if (enrollmentMonths !== 3) {
@@ -152,6 +147,78 @@ export async function POST(request: Request) {
         }
         throw e;
       }
+    }
+
+    // ── Migración de la sesión de prueba (si el alumno venía del modo prueba) ──
+    let resolvedUserId: string | null = null;
+    if (trialId && trialId !== id) {
+      const trialRow = await db.execute({
+        sql: "SELECT id FROM users WHERE id = ?",
+        args: [trialId],
+      });
+      if (trialRow.rows.length > 0) {
+        const existingByEmail = await db.execute({
+          sql: "SELECT id FROM users WHERE email = ?",
+          args: [email],
+        });
+        if (existingByEmail.rows.length > 0 && String(existingByEmail.rows[0].id) !== trialId) {
+          // El Gmail ya está registrado: fusionar el progreso en la cuenta existente
+          const targetId = String(existingByEmail.rows[0].id);
+          await db.execute({
+            sql: "UPDATE progress SET user_id = ? WHERE user_id = ?",
+            args: [targetId, trialId],
+          }).catch(() => {});
+          await db.execute({
+            sql: "UPDATE trial_feedback SET user_id = ? WHERE user_id = ?",
+            args: [targetId, trialId],
+          }).catch(() => {});
+          await db.execute({
+            sql: "DELETE FROM users WHERE id = ?",
+            args: [trialId],
+          });
+          resolvedUserId = targetId;
+        } else {
+          // Convierte la fila de prueba en la cuenta registrada (id = uid de Firebase)
+          await db.execute({
+            sql: "UPDATE progress SET user_id = ? WHERE user_id = ?",
+            args: [id, trialId],
+          }).catch(() => {});
+          await db.execute({
+            sql: "UPDATE trial_feedback SET user_id = ? WHERE user_id = ?",
+            args: [id, trialId],
+          }).catch(() => {});
+          await db.execute({
+            sql: `UPDATE users SET id = ?, email = ?, name = ?, image = ?, phone = ?, age = ?, job_title = ?, education_level = ?, address = ?, status = 'pendiente', certificate_photo = COALESCE(?, certificate_photo), registration_receipt = COALESCE(?, registration_receipt) WHERE id = ?`,
+            args: [
+              id,
+              email,
+              name || "",
+              image || "",
+              phone || "",
+              age || "",
+              jobTitle || "",
+              educationLevel || "",
+              address || "",
+              certificatePhotoPath,
+              registrationReceiptPath,
+              trialId,
+            ],
+          });
+          resolvedUserId = id;
+        }
+      }
+    }
+
+    const existingUser = await db.execute({
+      sql: "SELECT * FROM users WHERE email = ? OR id = ?",
+      args: [email, resolvedUserId ?? id],
+    });
+
+    const wasExisting = existingUser.rows.length > 0;
+    const existingStatus = wasExisting ? String(existingUser.rows[0].status ?? "") : "";
+    const isTrialUser = existingStatus === "prueba";
+    if (wasExisting) {
+      resolvedUserId = String(existingUser.rows[0].id);
     }
 
     const rawPrevReceipt =
@@ -236,7 +303,7 @@ export async function POST(request: Request) {
     }
 
     if (!isAdmin && enrollmentMonths === 3) {
-      await insertEnrollmentPendingPayments(id, 3);
+      await insertEnrollmentPendingPayments(resolvedUserId ?? id, 3);
     }
 
     return NextResponse.json({ success: true });

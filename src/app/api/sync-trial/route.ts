@@ -1,80 +1,85 @@
 import { NextResponse } from "next/server";
 import { db, initDb } from "@/lib/db";
 
+function randomSuffix(): string {
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 export async function POST(request: Request) {
   try {
     await initDb();
 
     const body = await request.json();
-    const id = String(body.id ?? "").trim();
-    const email = String(body.email ?? "").trim();
     const name = String(body.name ?? "").trim();
-    const image = String(body.image ?? "");
+    const phone = String(body.phone ?? "").trim();
 
-    if (!id || !email) {
-      return NextResponse.json({ error: "Missing user data" }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
     }
-
-    const adminEmails = (process.env.ADMIN_EMAIL ?? "").split(",").map((e) => e.trim());
-    const isAdmin = adminEmails.includes(email);
+    if (!/^\d{7,15}$/.test(phone)) {
+      return NextResponse.json({ error: "Ingresa un celular válido (7-15 dígitos)." }, { status: 400 });
+    }
 
     const existingUser = await db.execute({
-      sql: "SELECT id, role, status, trial_exam_done FROM users WHERE email = ?",
-      args: [email],
+      sql: "SELECT id, name, role, status, trial_exam_done FROM users WHERE phone = ? LIMIT 1",
+      args: [phone],
     });
 
-    if (existingUser.rows.length === 0) {
-      const role = isAdmin ? "admin" : "student";
-      const status = isAdmin ? "activo" : "prueba";
-      await db.execute({
-        sql: `INSERT INTO users (id, name, email, image, role, status, trial_exam_done) VALUES (?, ?, ?, ?, ?, ?, 0)`,
-        args: [id, name || "", email, image || "", role, status],
-      });
+    if (existingUser.rows.length > 0) {
+      const row = existingUser.rows[0];
+      const userStatus = String(row.status ?? "");
 
+      if (userStatus !== "prueba") {
+        // El número ya corresponde a un usuario inscrito/registrado.
+        return NextResponse.json({
+          success: true,
+          id: String(row.id),
+          name: String(row.name ?? name),
+          role: String(row.role ?? "student"),
+          status: userStatus,
+          trialExamDone: Number(row.trial_exam_done ?? 0) === 1,
+          canEnroll: false,
+          isNew: false,
+          existingRegistered: true,
+        });
+      }
+
+      await db.execute({
+        sql: "UPDATE users SET name = ? WHERE id = ?",
+        args: [name, String(row.id)],
+      }).catch(() => {});
       return NextResponse.json({
         success: true,
-        status,
-        role,
-        trialExamDone: false,
-        canEnroll: false,
-        isNew: true,
+        id: String(row.id),
+        name,
+        role: String(row.role ?? "student"),
+        status: "prueba",
+        trialExamDone: Number(row.trial_exam_done ?? 0) === 1,
+        canEnroll: Number(row.trial_exam_done ?? 0) === 1,
+        isNew: false,
+        existingRegistered: false,
       });
     }
 
-    const row = existingUser.rows[0];
-    const currentStatus = String(row.status ?? "pendiente");
-    const trialExamDone = Number(row.trial_exam_done ?? 0) === 1;
-    const role = String(row.role ?? "student");
+    const suffix = randomSuffix();
+    const id = `prueba_${suffix}`;
+    const email = `prueba_${suffix}@prueba.local`;
 
     await db.execute({
-      sql: "UPDATE users SET name = ?, image = ? WHERE email = ?",
-      args: [name || "", image || "", email],
-    }).catch(() => {});
-
-    if (isAdmin && role !== "admin") {
-      await db.execute({
-        sql: "UPDATE users SET role = 'admin', status = 'activo' WHERE email = ?",
-        args: [email],
-      });
-      return NextResponse.json({
-        success: true,
-        status: "activo",
-        role: "admin",
-        trialExamDone: true,
-        canEnroll: false,
-        isNew: false,
-      });
-    }
-
-    const canEnroll = currentStatus === "prueba" && trialExamDone;
+      sql: `INSERT INTO users (id, name, email, image, role, status, phone, trial_exam_done) VALUES (?, ?, ?, '', 'student', 'prueba', ?, 0)`,
+      args: [id, name, email, phone],
+    });
 
     return NextResponse.json({
       success: true,
-      status: currentStatus,
-      role,
-      trialExamDone,
-      canEnroll,
-      isNew: false,
+      id,
+      name,
+      role: "student",
+      status: "prueba",
+      trialExamDone: false,
+      canEnroll: false,
+      isNew: true,
+      existingRegistered: false,
     });
   } catch (error) {
     console.error("Sync Trial Error:", error);

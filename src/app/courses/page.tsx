@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
+import { getAuthCache, setAuthCache, getTrialSession } from "@/lib/auth-cache";
 
 import { Book, GraduationCap, Clock, Shield, Clock3, Lock, PlayCircle, CheckCircle2, CreditCard, AlertCircle, Loader2, Sparkles, Download } from "lucide-react";
 import Link from "next/link";
@@ -112,6 +112,14 @@ export default function CoursesPage() {
           router.push("/");
         }
       } else {
+        const trial = getTrialSession();
+        if (trial && trial.id) {
+          setUser({ id: trial.id, name: trial.name || "Estudiante" });
+          setStatus("prueba");
+          setLoading(false);
+          fetchTopics(trial.id, "prueba");
+          return;
+        }
         router.push("/");
       }
     });

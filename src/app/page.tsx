@@ -24,7 +24,7 @@ import {
   Gift
 } from "lucide-react";
 import { AuthButtons } from "./components/AuthButtons";
-import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
+import { getAuthCache, setAuthCache, getTrialSession } from "@/lib/auth-cache";
 import anime from "animejs";
 
 export default function LandingPage() {
@@ -70,6 +70,11 @@ export default function LandingPage() {
           setLoading(false);
         }
       } else {
+        const trial = getTrialSession();
+        if (trial && trial.id) {
+          router.push("/courses");
+          return;
+        }
         setLoading(false);
       }
     });

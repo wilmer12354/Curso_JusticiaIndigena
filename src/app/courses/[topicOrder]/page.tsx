@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus, Download } from "lucide-react";
 import { auth } from "@/lib/firebase";
+import { getTrialSession } from "@/lib/auth-cache";
 import { LogoutButton } from "@/app/components/LogoutButton";
 import { PRICE_TOTAL } from "@/lib/pricing";
 
@@ -76,69 +77,93 @@ export default function TopicDetailPage() {
   const isExamComplete = examQuestions.length > 0 && answeredCount === examQuestions.length;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser?.email) {
-        router.push("/");
+    const loadTopic = async (
+      studentId: string,
+      studentName: string,
+      studentStatus: string,
+      canEnrollValue: boolean
+    ) => {
+      setStudent({
+        id: studentId,
+        name: studentName,
+        status: studentStatus,
+      });
+      setCanEnroll(canEnrollValue);
+
+      const topicRes = await fetch(
+        `/api/topics/${params.topicOrder}?userId=${encodeURIComponent(studentId)}&status=${encodeURIComponent(studentStatus)}`
+      );
+
+      if (!topicRes.ok) {
+        const topicData = await topicRes.json().catch(() => null);
+        if (topicRes.status === 403 && topicData?.needsPayment) {
+          setNeedsPayment(true);
+        }
+        if (topicRes.status === 403 && topicData?.needsEnrollment) {
+          setNeedsEnrollment(true);
+        }
+        setError(topicData?.error ?? "No se pudo cargar este tema.");
+        setLoading(false);
         return;
       }
 
-      try {
-        const roleRes = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
+      const topicData = await topicRes.json();
+      setTopic(topicData.topic);
+      setQuestions(topicData.questions ?? []);
+      setProgress(topicData.progress ?? null);
+    };
 
-        if (!roleRes.ok) {
-          router.push("/");
-          return;
-        }
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser?.email) {
+        try {
+          const roleRes = await fetch(`/api/user-role?email=${encodeURIComponent(firebaseUser.email)}`);
 
-        const roleData = await roleRes.json();
-
-        if (!roleData.exists) {
-          router.push("/");
-          return;
-        }
-
-        if (roleData.role === "admin") {
-          router.push("/admin");
-          return;
-        }
-
-        if (roleData.status !== "activo" && roleData.status !== "prueba") {
-          router.push("/courses");
-          return;
-        }
-
-        setStudent({
-          id: firebaseUser.uid,
-          name: roleData.name || firebaseUser.displayName || "Estudiante",
-          status: roleData.status,
-        });
-        setCanEnroll(Boolean(roleData.canEnroll));
-
-        const topicRes = await fetch(
-          `/api/topics/${params.topicOrder}?userId=${encodeURIComponent(firebaseUser.uid)}&status=${encodeURIComponent(roleData.status)}`
-        );
-
-        if (!topicRes.ok) {
-          const topicData = await topicRes.json().catch(() => null);
-          if (topicRes.status === 403 && topicData?.needsPayment) {
-            setNeedsPayment(true);
+          if (!roleRes.ok) {
+            router.push("/");
+            return;
           }
-          if (topicRes.status === 403 && topicData?.needsEnrollment) {
-            setNeedsEnrollment(true);
+
+          const roleData = await roleRes.json();
+
+          if (!roleData.exists) {
+            router.push("/");
+            return;
           }
-          setError(topicData?.error ?? "No se pudo cargar este tema.");
+
+          if (roleData.role === "admin") {
+            router.push("/admin");
+            return;
+          }
+
+          if (roleData.status !== "activo" && roleData.status !== "prueba") {
+            router.push("/courses");
+            return;
+          }
+
+          await loadTopic(
+            firebaseUser.uid,
+            roleData.name || firebaseUser.displayName || "Estudiante",
+            roleData.status,
+            Boolean(roleData.canEnroll)
+          );
+        } catch {
+          setError("Ocurrio un error al cargar el tema.");
+        } finally {
           setLoading(false);
-          return;
         }
-
-        const topicData = await topicRes.json();
-        setTopic(topicData.topic);
-        setQuestions(topicData.questions ?? []);
-        setProgress(topicData.progress ?? null);
-      } catch {
-        setError("Ocurrio un error al cargar el tema.");
-      } finally {
-        setLoading(false);
+      } else {
+        const trial = getTrialSession();
+        if (trial && trial.id) {
+          try {
+            await loadTopic(trial.id, trial.name || "Estudiante", "prueba", false);
+          } catch {
+            setError("Ocurrio un error al cargar el tema.");
+          } finally {
+            setLoading(false);
+          }
+        } else {
+          router.push("/");
+        }
       }
     });
 

@@ -6,7 +6,7 @@ import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import Swal from "sweetalert2";
 import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload, Download } from "lucide-react";
-import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
+import { getAuthCache, setAuthCache, getTrialSession, clearTrialSession } from "@/lib/auth-cache";
 import { PRICE_TOTAL } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
@@ -196,6 +196,9 @@ export default function RegisterPage() {
     setError(null);
     setStep("loading");
 
+    const trial = getTrialSession();
+    const trialId = trial?.id ?? "";
+
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
@@ -235,6 +238,7 @@ export default function RegisterPage() {
       formData.append("enrollmentMonths", String(paymentMonths));
       formData.append("receipt", receiptFile);
       formData.append("certificatePhoto", certificatePhotoFile);
+      if (trialId) formData.append("trialId", trialId);
 
       const res = await fetch("/api/sync-user", {
         method: "POST",
@@ -247,6 +251,8 @@ export default function RegisterPage() {
           typeof errData.error === "string" ? errData.error : "Error al guardar los datos.";
         throw new Error(msg);
       }
+
+      clearTrialSession();
 
       // Verificar rol, actualizar caché y redirigir
       const roleRes = await fetch(`/api/user-role?email=${encodeURIComponent(user.email!)}`);

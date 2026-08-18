@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
       role: row.role,
       status: row.status ?? "activo",
       created_at: row.created_at,
+      phone: row.phone ?? "",
       age: row.age,
       job_title: row.job_title,
       education_level: row.education_level,

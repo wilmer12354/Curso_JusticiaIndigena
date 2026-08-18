@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon, FileImage, Bell, Banknote, Lock, Unlock } from "lucide-react";
+import { LayoutDashboard, Users, BookOpenCheck, Pencil, Trash2, Plus, X, Search, RefreshCw, Clock, CheckCircle2, UserCheck, CreditCard, ThumbsUp, ThumbsDown, BadgeCheck, XOctagon, FileImage, Bell, Banknote, Lock, Unlock, Phone, PhoneCall, MessageCircle } from "lucide-react";
 import { comprobantePublicUrl } from "@/lib/comprobante-public-url";
 import { LogoutButton } from "../components/LogoutButton";
 import { getAuthCache, setAuthCache } from "@/lib/auth-cache";
@@ -23,6 +23,7 @@ type User = {
   address?: string;
   certificate_photo?: string;
   trial_exam_done?: number;
+  phone?: string;
 };
 
 type Payment = {
@@ -62,7 +63,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [activeSection, setActiveSection] = useState<"dashboard" | "users" | "pendientes" | "pagos" | "bloqueados">("dashboard");
+  const [activeSection, setActiveSection] = useState<"dashboard" | "users" | "pendientes" | "pagos" | "bloqueados" | "noinscritos">("dashboard");
   const [payments, setPayments] = useState<Payment[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [processingPayment, setProcessingPayment] = useState<number | null>(null);
@@ -210,7 +211,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (loading) return;
-    if (activeSection === "users" || activeSection === "pendientes") fetchUsers();
+    if (activeSection === "users" || activeSection === "pendientes" || activeSection === "noinscritos") fetchUsers();
     else if (activeSection === "pagos") fetchPayments();
     else if (activeSection === "bloqueados") fetchBlocked();
   }, [loading, activeSection, fetchUsers, fetchPayments, fetchBlocked]);
@@ -307,6 +308,9 @@ export default function AdminDashboard() {
   }
 
   const pending = users.filter((u) => u.status === "pendiente");
+  const notEnrolled = users
+    .filter((u) => u.status === "prueba" && !!u.phone)
+    .sort((a, b) => Number(b.trial_exam_done ?? 0) - Number(a.trial_exam_done ?? 0));
   const pendingPayments = payments.filter((p) => p.status === "pendiente");
   const approvedRevenueBs = payments
     .filter((p) => p.status === "aprobado")
@@ -353,21 +357,22 @@ export default function AdminDashboard() {
           {[
             { id: "dashboard", label: "Dashboard", Icon: BookOpenCheck },
             { id: "users", label: "Estudiantes", Icon: Users },
+            { id: "noinscritos", label: "No inscritos", Icon: PhoneCall },
             { id: "pendientes", label: "Pendientes", Icon: Clock },
             { id: "pagos", label: "Pagos", Icon: CreditCard },
             { id: "bloqueados", label: "Bloqueados", Icon: Lock },
           ].map(({ id, label, Icon }) => (
             <button
               key={id}
-              onClick={() => setActiveSection(id as "dashboard" | "users" | "pendientes" | "pagos")}
+              onClick={() => setActiveSection(id as "dashboard" | "users" | "pendientes" | "pagos" | "bloqueados" | "noinscritos")}
               style={{
                 display: "flex", alignItems: "center", gap: 12, padding: "10px 14px",
                 borderRadius: 12, border: "none", cursor: "pointer", textAlign: "left", fontSize: 14, fontWeight: 500,
                   background: activeSection === id
-                    ? (id === "pendientes" ? "rgba(245,158,11,0.12)" : id === "pagos" ? "rgba(99,102,241,0.15)" : id === "bloqueados" ? "rgba(248,113,113,0.12)" : "rgba(194,65,12,0.15)")
+                    ? (id === "pendientes" ? "rgba(245,158,11,0.12)" : id === "pagos" ? "rgba(99,102,241,0.15)" : id === "bloqueados" ? "rgba(248,113,113,0.12)" : id === "noinscritos" ? "rgba(168,85,247,0.12)" : "rgba(194,65,12,0.15)")
                     : "transparent",
                   color: activeSection === id
-                    ? (id === "pendientes" ? "#f59e0b" : id === "pagos" ? "#818cf8" : id === "bloqueados" ? "#f87171" : "var(--primary)")
+                    ? (id === "pendientes" ? "#f59e0b" : id === "pagos" ? "#818cf8" : id === "bloqueados" ? "#f87171" : id === "noinscritos" ? "#a855f7" : "var(--primary)")
                     : "#94a3b8",
                 transition: "all 0.2s",
                 position: "relative",
@@ -376,6 +381,13 @@ export default function AdminDashboard() {
               }}
             >
               <Icon size={18} />{label}
+              {id === "noinscritos" && notEnrolled.length > 0 && (
+                <span style={{
+                  marginLeft: "auto", background: "#a855f7", color: "#fff",
+                  fontSize: 11, fontWeight: 800, borderRadius: 999,
+                  padding: "1px 7px", lineHeight: 1.6,
+                }}>{notEnrolled.length}</span>
+              )}
               {id === "pendientes" && pending.length > 0 && (
                 <span style={{
                   marginLeft: "auto", background: "#f59e0b", color: "#000",
@@ -411,7 +423,7 @@ export default function AdminDashboard() {
         <header style={{ marginBottom: 32, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, background: "linear-gradient(135deg,#fff,#94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 4 }}>
-              {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : activeSection === "bloqueados" ? "Temas Bloqueados" : "Gestión de Estudiantes"}
+              {activeSection === "dashboard" ? `Bienvenido, ${adminUser.name}` : activeSection === "pendientes" ? "Activación de Cuentas" : activeSection === "pagos" ? "Gestión de Pagos" : activeSection === "bloqueados" ? "Temas Bloqueados" : activeSection === "noinscritos" ? "No inscritos" : "Gestión de Estudiantes"}
             </h1>
             <p style={{ color: "#64748b", fontSize: 14 }}>
               {activeSection === "dashboard"
@@ -422,7 +434,9 @@ export default function AdminDashboard() {
                     ? "Cada pago es por el curso completo (300 Bs). Revisa el comprobante y aprueba o rechaza."
                     : activeSection === "bloqueados"
                       ? "Estudiantes que agotaron sus 3 intentos en un tema. Desbloquéalos para que puedan reintentar."
-                      : "Visualiza, crea, edita y elimina estudiantes."}
+                      : activeSection === "noinscritos"
+                        ? "Estudiantes que hicieron la prueba gratis pero aún no se inscribieron. Llámalos para invitarlos."
+                        : "Visualiza, crea, edita y elimina estudiantes."}
             </p>
           </div>
           <div style={{ position: "relative", flexShrink: 0 }}>
@@ -925,6 +939,87 @@ export default function AdminDashboard() {
           </>
         )}
 
+        {activeSection === "noinscritos" && (
+          <>
+            <div style={{ display: "flex", gap: 12, marginBottom: 20, alignItems: "center" }}>
+              <button onClick={fetchUsers} title="Recargar" style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}>
+                <RefreshCw size={16} className={usersLoading ? "animate-spin" : ""} />
+              </button>
+            </div>
+            {usersLoading ? (
+              <div style={{ textAlign: "center", padding: 48, color: "#64748b" }}>Cargando...</div>
+            ) : notEnrolled.length === 0 ? (
+              <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: "4rem", textAlign: "center" }}>
+                <CheckCircle2 size={48} color="#a855f7" style={{ margin: "0 auto 1rem" }} />
+                <p style={{ color: "#64748b", fontSize: 14 }}>No hay estudiantes que hicieron la prueba sin inscribirse.</p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {notEnrolled.map((u) => (
+                  <div key={u.id} style={{
+                    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(168,85,247,0.18)",
+                    borderRadius: 14, padding: "1.25rem 1.5rem",
+                    display: "flex", alignItems: "center", gap: 16, flexWrap: isMobile ? "wrap" : "nowrap",
+                  }}>
+                    <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(168,85,247,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#a855f7", flexShrink: 0 }}>
+                      {String(u.name ?? "?")[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: "#f1f5f9", marginBottom: 2 }}>{u.name || "—"}</div>
+                      <div style={{ fontSize: 13, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {u.phone ? `Celular: +591 ${u.phone}` : "Sin celular registrado"}
+                      </div>
+                    </div>
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 999, padding: "3px 10px", color: Number(u.trial_exam_done) === 1 ? "#4ade80" : "#f59e0b", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
+                      <Phone size={12} />
+                      {Number(u.trial_exam_done) === 1 ? "Prueba completada" : "Prueba pendiente"}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#475569", whiteSpace: "nowrap", marginLeft: isMobile ? "auto" : 0 }}>
+                      {u.created_at ? new Date(u.created_at).toLocaleDateString("es-BO") : "—"}
+                    </div>
+                    {u.phone ? (
+                      <>
+                        <a
+                          href={`tel:+591${u.phone}`}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            padding: "8px 14px", borderRadius: 10,
+                            background: "rgba(37,99,235,0.15)",
+                            border: "1px solid rgba(59,130,246,0.35)",
+                            color: "#60a5fa", fontSize: 13, fontWeight: 700,
+                            textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          <PhoneCall size={15} />
+                          Llamar
+                        </a>
+                        <a
+                          href={`https://wa.me/591${u.phone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            padding: "8px 14px", borderRadius: 10,
+                            background: "rgba(34,197,94,0.15)",
+                            border: "1px solid rgba(34,197,94,0.35)",
+                            color: "#4ade80", fontSize: 13, fontWeight: 700,
+                            textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          <MessageCircle size={15} />
+                          WhatsApp
+                        </a>
+                      </>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {activeSection === "users" && (
           <>
 
@@ -997,7 +1092,14 @@ export default function AdminDashboard() {
                           </div>
                         </td>
                         <td style={{ padding: "14px 20px", fontSize: 13, color: "#94a3b8" }}>
-                          <div style={{ marginBottom: 4 }}><strong style={{ color: "#cbd5e1" }}>Email:</strong> {u.email}</div>
+                          <div style={{ marginBottom: 4 }}>
+                            <strong style={{ color: "#cbd5e1" }}>
+                              {u.status === "prueba" && u.email?.endsWith("@prueba.local") ? "Celular:" : "Email:"}
+                            </strong>{" "}
+                            {u.status === "prueba" && u.email?.endsWith("@prueba.local")
+                              ? (u.phone ? `+591 ${u.phone}` : "Sin celular")
+                              : u.email}
+                          </div>
                           {u.age && <div><strong style={{ color: "#cbd5e1" }}>Edad:</strong> {u.age}</div>}
                           {u.job_title && <div><strong style={{ color: "#cbd5e1" }}>Cargo:</strong> {u.job_title}</div>}
                           {u.education_level && <div><strong style={{ color: "#cbd5e1" }}>Estudios:</strong> {u.education_level}</div>}

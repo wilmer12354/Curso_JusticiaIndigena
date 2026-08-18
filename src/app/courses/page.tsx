@@ -433,7 +433,8 @@ export default function CoursesPage() {
                       </div>
                       <div className="bank-row">
                         <span className="bank-label">Nº de cuenta</span>
-                        <span className="bank-value">30362060</span>
+                        {/*<span className="bank-value">30362060</span>*/}
+                        <span className="bank-value">10000033137957</span>
                       </div>
                       <div className="bank-row">
                         <span className="bank-label">Titular</span>

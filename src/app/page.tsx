@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+
 import {
   Shield,
   BookOpen,
@@ -229,7 +230,7 @@ export default function LandingPage() {
 
             <div className="relative max-w-4xl mx-auto">
               <div className="fixed top-24 md:top-36 right-5 z-50 flex flex-col items-end gap-2">
-                <span className="hidden md:inline text-2xl text-amber-300 font-medium whitespace-nowrap bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-amber-500/20 shadow-lg">
+                <span className="hidden md:inline text-2xl text-amber-300 font-medium whitespace-nowrap bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg  shadow-lg">
                   ¿Tienes problemas con la conectividad de internet? 👇
                 </span>
                 <button
@@ -254,7 +255,7 @@ export default function LandingPage() {
             </div>
             <div className="relative max-w-4xl">
               <div className="fixed top-24 md:top-36 left-5 z-50 flex flex-col items-start gap-2">
-                <span className="hidden md:inline text-2xl text-amber-300 font-medium whitespace-nowrap bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-amber-500/20 shadow-lg">
+                <span className="hidden md:inline text-2xl text-amber-300 font-medium whitespace-nowrap bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
                   👇¿Lo que obtienes de regalo?
                 </span>
                 <button
@@ -686,6 +687,89 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      <footer className="relative z-10 border-t border-white/10 bg-[#0b0b0f]">
+        <div className="max-w-6xl mx-auto px-6 md:px-12 py-10">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+
+            {/* Logo / Nombre */}
+            <div className="text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Scale className="w-5 h-5 text-primary" />
+                </div>
+
+                <h3 className="text-white font-bold text-lg">
+                  Curso de Derecho
+                </h3>
+              </div>
+
+              <p className="text-slate-500 text-sm leading-relaxed max-w-sm mx-auto md:mx-0">
+                Formación jurídica especializada para fortalecer tus
+                conocimientos y preparación profesional.
+              </p>
+            </div>
+
+            {/* Información */}
+            <div className="text-center">
+              <h4 className="text-white font-semibold mb-4">
+                Información
+              </h4>
+
+              <div className="space-y-2">
+                <p className="text-slate-500 text-sm">
+                  Acceso de por vida
+                </p>
+
+                <p className="text-slate-500 text-sm">
+                  Certificado digital
+                </p>
+
+                <p className="text-slate-500 text-sm">
+                  Material didáctico incluido
+                </p>
+                <a
+                  href="/politica-privacidad"
+                  className="text-slate-500 hover:text-white text-sm transition-colors"
+                >
+                  Política de Privacidad
+                </a>
+              </div>
+            </div>
+
+            {/* Contacto */}
+            <div className="text-center md:text-right">
+              <h4 className="text-white font-semibold mb-4">
+                ¿Necesitas ayuda?
+              </h4>
+
+              <a
+                href="https://wa.me/59171539769"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/15 transition-all"
+              >
+                <span>💬</span>
+                <span className="text-sm font-semibold">
+                  WhatsApp
+                </span>
+              </a>
+            </div>
+
+          </div>
+
+          {/* Línea inferior */}
+          <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-3">
+
+
+            <p className="text-slate-600 text-xs">
+              Hecho con dedicación para estudiantes que quieran aprender sobre la Justicia Indígena.
+            </p>
+
+          </div>
+
+        </div>
+      </footer>
 
       {/* ── INTERNET HELP MODAL ── */}
       {showHelp && (

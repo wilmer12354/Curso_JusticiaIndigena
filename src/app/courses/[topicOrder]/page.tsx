@@ -458,13 +458,13 @@ export default function TopicDetailPage() {
         </div>
       </nav>
 
-      <main className="container min-h-screen py-16">
-        <Link href="/courses" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8">
-          <ArrowLeft className="w-4 h-4" />
-          Volver a mis cursos
-        </Link>
+        <main className="container flex flex-col min-h-screen py-16">
+          <Link href="/courses" className="inline-flex items-center gap-2 text-slate-400 hover:text-white mb-8">
+            <ArrowLeft className="w-4 h-4" />
+            Volver a mis cursos
+          </Link>
 
-        <section className="glass-card mb-8">
+          <section className="glass-card order-2">
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
               Tema {topic.topicOrder}
@@ -511,7 +511,7 @@ export default function TopicDetailPage() {
           </div>
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+        <section className="grid gap-8 lg:grid-cols-[1.4fr_1fr] order-1 mb-8">
           <div className="glass-card">
             <div className="flex items-center gap-3 mb-5">
               <PlayCircle className="w-5 h-5 text-primary" />

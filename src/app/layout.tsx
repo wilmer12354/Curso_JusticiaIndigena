@@ -27,6 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <meta name="facebook-domain-verification" content="j2waann1ikslritv94oartioipv59e" />
+      </head>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

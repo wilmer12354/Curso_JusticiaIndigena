@@ -290,6 +290,16 @@ export default function LandingPage() {
               Modalidades
             </h2>
 
+            {/* OFERTA */}
+            <a
+              href="/modalidades/a-distancia"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white font-bold text-lg md:text-xl transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-orange-500/40 active:scale-95 shadow-[0_0_30px_rgba(249,115,22,0.5)] animate-pulse ring-2 ring-orange-400/50 mb-8 max-w-4xl mx-auto"
+            >
+              <span className="text-2xl">🔥</span>
+              <span>OFERTA HASTA FIN DE MES — 350 Bs</span>
+              <span className="text-2xl">🔥</span>
+            </a>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
               {[
                 { href: "/modalidades/en-linea", icon: Globe, label: "En Línea", desc: "Prueba gratis y examen en plataforma" },

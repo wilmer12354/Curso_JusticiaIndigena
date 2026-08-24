@@ -97,10 +97,19 @@ export default function ADistanciaPage() {
           </p>
         </div>
 
-        {/* Inscripción */}
-        <div className="bg-white/4 backdrop-blur-xl border border-white/8 rounded-2xl p-8 text-center mt-10">
-          <p className="text-slate-300 text-xl mb-6">
-            ¿Listo para inscribirte? Completa el formulario y comienza tu aprendizaje.
+        {/* Precio Oferta */}
+        <div className="bg-gradient-to-r from-red-600/20 via-orange-500/20 to-yellow-500/20 backdrop-blur-xl border-2 border-orange-500/50 rounded-2xl p-8 text-center mt-10 shadow-[0_0_40px_rgba(249,115,22,0.3)]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold mb-4 animate-pulse">
+            <span>🔥</span>
+            <span>OFERTA — SOLO ESTE MES</span>
+            <span>🔥</span>
+          </div>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <span className="text-slate-500 text-2xl line-through">500 Bs</span>
+            <span className="text-orange-500 text-5xl font-bold">350 Bs</span>
+          </div>
+          <p className="text-slate-400 text-lg mb-6">
+            Ahorra 150 Bs — Precio especial por tiempo limitado.
           </p>
           <a
             href="https://docs.google.com/forms/d/e/1FAIpQLSf893LfRzC8LwErurS32uOMMzqdogcolbHEJO9uouachX3vrA/viewform?usp=header"
@@ -108,7 +117,7 @@ export default function ADistanciaPage() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-gradient-to-r from-primary to-orange-600 text-white font-bold text-lg transition-all duration-300 scale-110 shadow-[0_0_40px_rgba(194,65,12,0.5)] animate-pulse ring-2 ring-orange-400/50"
           >
-            Inscribirme ahora
+            Inscribirme ahora — 350 Bs
           </a>
         </div>
       </div>

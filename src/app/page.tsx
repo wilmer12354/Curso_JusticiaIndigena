@@ -282,7 +282,7 @@ export default function LandingPage() {
               </span>
               <span className="mx-3 text-yellow-300">•</span>
               <span className="text-white font-bold text-2xl drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                76517230
+                60553362
               </span>
             </p>
 

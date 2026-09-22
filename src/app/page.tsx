@@ -24,7 +24,12 @@ import {
   Gift
 } from "lucide-react";
 import { AuthButtons } from "./components/AuthButtons";
-import { getAuthCache, setAuthCache, getTrialSession } from "@/lib/auth-cache";
+import {
+  getAuthCache,
+  setAuthCache,
+  getTrialSession,
+  getPasswordSession,
+} from "@/lib/auth-cache";
 import anime from "animejs";
 
 export default function LandingPage() {
@@ -70,6 +75,19 @@ export default function LandingPage() {
           setLoading(false);
         }
       } else {
+        const pw = getPasswordSession();
+        if (pw && pw.id) {
+          if (pw.mustChangePassword) {
+            router.push("/cambiar-contrasenia");
+            return;
+          }
+          if (pw.role === "admin") {
+            router.push("/admin");
+          } else {
+            router.push("/courses");
+          }
+          return;
+        }
         const trial = getTrialSession();
         if (trial && trial.id) {
           router.push("/courses");

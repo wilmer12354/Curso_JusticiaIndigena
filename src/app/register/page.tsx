@@ -6,7 +6,7 @@ import { onAuthStateChanged, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import Swal from "sweetalert2";
 import { Shield, User, CreditCard, CheckCircle, ArrowLeft, X, Upload, Download } from "lucide-react";
-import { getAuthCache, setAuthCache, getTrialSession, clearTrialSession } from "@/lib/auth-cache";
+import { getAuthCache, setAuthCache, getTrialSession, clearTrialSession, clearPasswordSession } from "@/lib/auth-cache";
 import { PRICE_TOTAL } from "@/lib/pricing";
 import Image from "next/image";
 import Link from "next/link";
@@ -253,6 +253,7 @@ export default function RegisterPage() {
       }
 
       clearTrialSession();
+      clearPasswordSession();
 
       // Verificar rol, actualizar caché y redirigir
       const roleRes = await fetch(`/api/user-role?email=${encodeURIComponent(user.email!)}`);

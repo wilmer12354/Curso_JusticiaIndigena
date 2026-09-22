@@ -3,15 +3,23 @@
 import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
-import { UserPlus, LogIn, X, Sparkles, Menu } from "lucide-react";
+import { UserPlus, LogIn, X, Sparkles, Menu, KeyRound } from "lucide-react";
 import { useState } from "react";
 import Swal from "sweetalert2";
-import { setAuthCache, setTrialSession } from "@/lib/auth-cache";
+import {
+  setAuthCache,
+  setTrialSession,
+  setPasswordSession,
+  clearAuthCache,
+  clearTrialSession,
+  clearPasswordSession,
+} from "@/lib/auth-cache";
 
 export function AuthButtons() {
   const router = useRouter();
   const [loadingSignIn, setLoadingSignIn] = useState(false);
   const [loadingTrial, setLoadingTrial] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -174,6 +182,7 @@ export function AuthButtons() {
         return;
       }
 
+      clearPasswordSession();
       setAuthCache({ email: user.email!, role: data.role, name: user.displayName ?? "", status: data.status });
       if (data.role === "admin") {
         router.push("/admin");
@@ -190,11 +199,105 @@ export function AuthButtons() {
     }
   };
 
+  const handlePasswordSignIn = async () => {
+    try {
+      setError(null);
+
+      const { value: formValues, isConfirmed } = await Swal.fire({
+        icon: "info",
+        title: "Iniciar sesión",
+        html: `
+          <div style="text-align:left">
+            <p style="font-size:14px;color:#94a3b8;margin-bottom:16px;line-height:1.5">
+              Ingresa con el usuario y contraseña que te asignó el administrador.
+            </p>
+            <label for="swal-username" style="display:block;font-size:13px;color:#cbd5e1;margin-bottom:6px;font-weight:600">Usuario</label>
+            <input id="swal-username" type="text" autocomplete="username" placeholder="Ej: juanperez" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#fff;font-size:14px;margin-bottom:14px;outline:none"/>
+            <label for="swal-password" style="display:block;font-size:13px;color:#cbd5e1;margin-bottom:6px;font-weight:600">Contraseña</label>
+            <input id="swal-password" type="password" autocomplete="current-password" placeholder="••••••••" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid #334155;background:#1e293b;color:#fff;font-size:14px;outline:none"/>
+          </div>
+        `,
+        confirmButtonText: "Ingresar",
+        showCancelButton: true,
+        cancelButtonText: "Cancelar",
+        background: "#111827",
+        color: "#fff",
+        confirmButtonColor: "#ea580c",
+        cancelButtonColor: "#6b7280",
+        allowOutsideClick: false,
+        preConfirm: () => {
+          const usernameEl = document.getElementById("swal-username") as HTMLInputElement | null;
+          const passwordEl = document.getElementById("swal-password") as HTMLInputElement | null;
+          const username = (usernameEl?.value ?? "").trim();
+          const password = passwordEl?.value ?? "";
+          if (!username) {
+            Swal.showValidationMessage("Por favor ingresa tu usuario.");
+            return false;
+          }
+          if (!password) {
+            Swal.showValidationMessage("Por favor ingresa tu contraseña.");
+            return false;
+          }
+          return { username, password };
+        },
+      });
+
+      if (!isConfirmed || !formValues) return;
+
+      setLoadingPassword(true);
+
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formValues),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(data.error ?? "No se pudo iniciar sesión. Inténtalo de nuevo.");
+        return;
+      }
+
+      if (data.role === "admin") {
+        setError("Esta cuenta no puede iniciar sesión aquí.");
+        return;
+      }
+
+      clearAuthCache();
+      clearTrialSession();
+      try {
+        await auth.signOut();
+      } catch {
+        // no firebase session
+      }
+
+      setPasswordSession({
+        id: data.id,
+        username: data.username,
+        name: data.name || data.username,
+        role: data.role,
+        status: data.status,
+        mustChangePassword: Boolean(data.mustChangePassword),
+      });
+
+      if (data.mustChangePassword) {
+        router.push("/cambiar-contrasenia");
+      } else {
+        router.push("/courses");
+      }
+    } catch {
+      setError("Ocurrió un error al iniciar sesión.");
+    } finally {
+      setLoadingPassword(false);
+    }
+  };
+
   const handleSignUp = () => {
     router.push("/register");
   };
 
-  const busy = loadingSignIn || loadingTrial;
+  const busy = loadingSignIn || loadingTrial || loadingPassword;
 
   const menuActions = [
     {
@@ -218,6 +321,14 @@ export function AuthButtons() {
       label: loadingSignIn ? "Verificando..." : "Iniciar sesión",
       onClick: handleSignIn,
       icon: LogIn,
+      primary: false,
+      fullWidth: true,
+    },
+    {
+      id: "btn-password-signin",
+      label: loadingPassword ? "Verificando..." : "Usuario y contraseña",
+      onClick: handlePasswordSignIn,
+      icon: KeyRound,
       primary: false,
       fullWidth: true,
     },

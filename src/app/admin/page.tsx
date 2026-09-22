@@ -13,6 +13,7 @@ type User = {
   id: string;
   name: string;
   email: string;
+  username?: string | null;
   image: string;
   role: string;
   status: string;
@@ -52,7 +53,7 @@ type BlockedTopic = {
 
 type ModalMode = "create" | "edit" | "delete" | null;
 
-const EMPTY_FORM = { id: "", name: "", email: "", image: "", role: "student" };
+const EMPTY_FORM = { id: "", name: "", email: "", image: "", role: "student", username: "", password: "" };
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -224,7 +225,8 @@ export default function AdminDashboard() {
   const filtered = users.filter(
     (u) =>
       u.name?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase())
+      u.email?.toLowerCase().includes(search.toLowerCase()) ||
+      u.username?.toLowerCase().includes(search.toLowerCase())
   );
 
   // Modal helpers
@@ -235,7 +237,15 @@ export default function AdminDashboard() {
   };
   const openEdit = (u: User) => {
     setSelectedUser(u);
-    setForm({ id: u.id, name: u.name || "", email: u.email, image: u.image || "", role: u.role });
+    setForm({
+      id: u.id,
+      name: u.name || "",
+      email: u.email || "",
+      image: u.image || "",
+      role: u.role,
+      username: u.username || "",
+      password: "",
+    });
     setError("");
     setModalMode("edit");
   };
@@ -252,27 +262,70 @@ export default function AdminDashboard() {
 
   // CRUD handlers
   const handleCreate = async () => {
-    if (!form.id || !form.email) { setError("ID y Email son requeridos."); return; }
+    const hasUsername = Boolean(form.username?.trim());
+    const hasPassword = Boolean(form.password);
+
+    if (hasUsername !== hasPassword) {
+      setError("Debes ingresar usuario y contraseña juntos.");
+      return;
+    }
+    if (!hasUsername && (!form.id || !form.email)) {
+      setError("ID y Email son requeridos (o usa usuario y contraseña).");
+      return;
+    }
     setSaving(true);
+    const payload: Record<string, string> = {
+      name: form.name,
+      email: form.email,
+      image: form.image,
+      role: form.role,
+    };
+    if (hasUsername && hasPassword) {
+      payload.username = form.username.trim();
+      payload.password = form.password;
+      if (form.id) payload.id = form.id;
+    } else {
+      payload.id = form.id;
+    }
     const res = await adminFetch("/api/admin/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
-    if (res.ok) { closeModal(); fetchUsers(); } else { setError("Error al crear usuario."); }
+    if (res.ok) {
+      closeModal();
+      fetchUsers();
+      fetchPayments();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Error al crear usuario.");
+    }
   };
 
   const handleEdit = async () => {
     if (!selectedUser) return;
     setSaving(true);
+    const payload: Record<string, string> = {
+      name: form.name,
+      email: form.email,
+      image: form.image,
+      role: form.role,
+    };
+    if (form.password) payload.password = form.password;
     const res = await adminFetch(`/api/admin/users/${selectedUser.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify(payload),
     });
     setSaving(false);
-    if (res.ok) { closeModal(); fetchUsers(); } else { setError("Error al actualizar."); }
+    if (res.ok) {
+      closeModal();
+      fetchUsers();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Error al actualizar.");
+    }
   };
 
   const handleDelete = async () => {
@@ -672,7 +725,7 @@ export default function AdminDashboard() {
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 600, fontSize: 14, color: "#f1f5f9", marginBottom: 2 }}>{u.name || "—"}</div>
-                      <div style={{ fontSize: 13, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</div>
+                      <div style={{ fontSize: 13, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.username || u.email}</div>
                     </div>
                     <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 999, padding: "3px 10px", color: "#f59e0b", fontSize: 12, fontWeight: 600, whiteSpace: "nowrap" }}>
                       <Clock size={12} /> Pendiente
@@ -1094,12 +1147,24 @@ export default function AdminDashboard() {
                         <td style={{ padding: "14px 20px", fontSize: 13, color: "#94a3b8" }}>
                           <div style={{ marginBottom: 4 }}>
                             <strong style={{ color: "#cbd5e1" }}>
-                              {u.status === "prueba" && u.email?.endsWith("@prueba.local") ? "Celular:" : "Email:"}
+                              {u.username ? "Usuario:" : u.status === "prueba" && u.email?.endsWith("@prueba.local") ? "Celular:" : "Email:"}
                             </strong>{" "}
-                            {u.status === "prueba" && u.email?.endsWith("@prueba.local")
-                              ? (u.phone ? `+591 ${u.phone}` : "Sin celular")
-                              : u.email}
+                            {u.username
+                              ? u.username
+                              : u.status === "prueba" && u.email?.endsWith("@prueba.local")
+                                ? (u.phone ? `+591 ${u.phone}` : "Sin celular")
+                                : (u.email || "—")}
                           </div>
+                          {u.username && u.email && (
+                            <div style={{ marginBottom: 4 }}>
+                              <strong style={{ color: "#cbd5e1" }}>Email:</strong> {u.email}
+                            </div>
+                          )}
+                          {!u.username && u.phone && u.status !== "prueba" && (
+                            <div style={{ marginBottom: 4 }}>
+                              <strong style={{ color: "#cbd5e1" }}>Celular:</strong> +591 {u.phone}
+                            </div>
+                          )}
                           {u.age && <div><strong style={{ color: "#cbd5e1" }}>Edad:</strong> {u.age}</div>}
                           {u.job_title && <div><strong style={{ color: "#cbd5e1" }}>Cargo:</strong> {u.job_title}</div>}
                           {u.education_level && <div><strong style={{ color: "#cbd5e1" }}>Estudios:</strong> {u.education_level}</div>}
@@ -1209,20 +1274,53 @@ export default function AdminDashboard() {
                 {error && <div style={{ background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, padding: "10px 14px", color: "#f87171", fontSize: 13, marginBottom: 16 }}>{error}</div>}
 
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {modalMode === "create" && (
-                    <div>
-                      <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>ID *</label>
-                      <input value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} placeholder="ID único del usuario" style={inputStyle} />
-                    </div>
-                  )}
                   <div>
                     <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Nombre</label>
                     <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Nombre completo" style={inputStyle} />
                   </div>
-                  <div>
-                    <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Email *</label>
-                    <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@ejemplo.com" style={inputStyle} />
-                  </div>
+
+                  {modalMode === "create" && (
+                    <>
+                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}>
+                        <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Usuario (para ingresar sin correo)</label>
+                        <input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="Ej: juanperez" autoComplete="off" style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Contraseña</label>
+                        <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Mínimo 6 caracteres" autoComplete="new-password" style={inputStyle} />
+                      </div>
+                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 14 }}>
+                        <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>ID (opcional si usas usuario/contraseña)</label>
+                        <input value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} placeholder="ID único del usuario" style={inputStyle} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Email (opcional si usas usuario/contraseña)</label>
+                        <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@ejemplo.com" style={inputStyle} />
+                      </div>
+                    </>
+                  )}
+
+                  {modalMode === "edit" && (
+                    <>
+                      <div>
+                        <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Email</label>
+                        <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="correo@ejemplo.com" style={inputStyle} />
+                      </div>
+                      {selectedUser?.username && (
+                        <div>
+                          <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Usuario</label>
+                          <input value={form.username} readOnly disabled style={{ ...inputStyle, opacity: 0.7 }} />
+                        </div>
+                      )}
+                      {selectedUser?.username && (
+                        <div>
+                          <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>Nueva contraseña (vacío = no cambiar)</label>
+                          <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Dejar vacío para mantener" autoComplete="new-password" style={inputStyle} />
+                        </div>
+                      )}
+                    </>
+                  )}
+
                   <div>
                     <label style={{ fontSize: 12, color: "#64748b", fontWeight: 600, display: "block", marginBottom: 6 }}>URL de Imagen</label>
                     <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." style={inputStyle} />

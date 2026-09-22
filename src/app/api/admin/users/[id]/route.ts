@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, ensureCourseTables, initDb } from "@/lib/db";
 import { verifyAdminRequest } from "@/lib/verify-admin";
 import { deletePublicComprobanteIfExists } from "@/lib/comprobantes";
+import { hashUserPassword } from "@/lib/password";
 
-// PATCH update user (name, email, role, image, status)
+// PATCH update user (name, email, role, image, status, password)
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const unauthorized = await verifyAdminRequest(req);
@@ -11,7 +12,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     await initDb();
     const body = await req.json();
-    const { name, email, role, image, status } = body;
+    const { name, email, role, image, status, password } = body;
     const { id } = await params;
 
     // If only status is being updated (activate/deactivate)
@@ -45,10 +46,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Full update
+    const emailValue =
+      typeof email === "string" && email.trim() ? email.trim() : null;
     await db.execute({
       sql: "UPDATE users SET name = ?, email = ?, role = ?, image = ? WHERE id = ?",
-      args: [name ?? null, email ?? null, role ?? "student", image ?? null, id],
+      args: [name ?? null, emailValue, role ?? "student", image ?? null, id],
     });
+
+    // Restablecer contraseña (opcional)
+    if (typeof password === "string" && password.length > 0) {
+      if (password.length < 6) {
+        return NextResponse.json(
+          { error: "La contraseña debe tener al menos 6 caracteres" },
+          { status: 400 }
+        );
+      }
+      const passwordHash = await hashUserPassword(password);
+      await db.execute({
+        sql: "UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?",
+        args: [passwordHash, id],
+      });
+    }
+
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error(e);

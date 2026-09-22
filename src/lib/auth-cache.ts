@@ -1,5 +1,6 @@
 const CACHE_KEY = "auth_cache";
 const TRIAL_KEY = "trial_session";
+const PW_KEY = "pw_session";
 
 export type AuthCache = {
   email: string;
@@ -14,6 +15,15 @@ export type TrialSession = {
   phone: string;
   email: string;
   status: "prueba";
+};
+
+export type PasswordSession = {
+  id: string;
+  username: string;
+  name: string;
+  role: string;
+  status: string;
+  mustChangePassword?: boolean;
 };
 
 export function setAuthCache(data: AuthCache): void {
@@ -63,6 +73,32 @@ export function getTrialSession(): TrialSession | null {
 export function clearTrialSession(): void {
   try {
     localStorage.removeItem(TRIAL_KEY);
+  } catch {
+    // localStorage may be unavailable
+  }
+}
+
+export function setPasswordSession(data: PasswordSession): void {
+  try {
+    localStorage.setItem(PW_KEY, JSON.stringify(data));
+  } catch {
+    // localStorage may be unavailable
+  }
+}
+
+export function getPasswordSession(): PasswordSession | null {
+  try {
+    const raw = localStorage.getItem(PW_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PasswordSession;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPasswordSession(): void {
+  try {
+    localStorage.removeItem(PW_KEY);
   } catch {
     // localStorage may be unavailable
   }

@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { ArrowLeft, BookOpen, CircleCheck, CircleHelp, GraduationCap, PlayCircle, XCircle, FileText, CreditCard, UserPlus, Download } from "lucide-react";
 import { auth } from "@/lib/firebase";
-import { getTrialSession } from "@/lib/auth-cache";
+import { getTrialSession, getPasswordSession } from "@/lib/auth-cache";
 import { LogoutButton } from "@/app/components/LogoutButton";
 import { PRICE_TOTAL } from "@/lib/pricing";
 
@@ -152,6 +152,30 @@ export default function TopicDetailPage() {
           setLoading(false);
         }
       } else {
+        const pw = getPasswordSession();
+        if (pw && pw.id) {
+          if (pw.mustChangePassword) {
+            router.push("/cambiar-contrasenia");
+            return;
+          }
+          if (pw.role === "admin") {
+            router.push("/admin");
+            return;
+          }
+          try {
+            await loadTopic(
+              pw.id,
+              pw.name || pw.username || "Estudiante",
+              pw.status || "activo",
+              false
+            );
+          } catch {
+            setError("Ocurrio un error al cargar el tema.");
+          } finally {
+            setLoading(false);
+          }
+          return;
+        }
         const trial = getTrialSession();
         if (trial && trial.id) {
           try {
